@@ -55,7 +55,7 @@ docs
 .gitlab-ci.yml
 
 # Prisma
-prisma/migrations
+
 
 # TypeScript
 *.tsbuildinfo
