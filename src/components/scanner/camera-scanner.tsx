@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { BrowserMultiFormatReader, BarcodeFormat } from "@zxing/browser";
+import { BrowserMultiFormatReader, BarcodeFormat, IScannerControls } from "@zxing/browser";
 import { DecodeHintType } from "@zxing/library";
 import { Button } from "@/components/ui";
 import { Camera, X } from "lucide-react";
@@ -14,18 +14,27 @@ interface CameraScannerProps {
 export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const controlsRef = useRef<IScannerControls | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(true);
 
   const stopScanner = useCallback(() => {
-    // Stop video tracks first
+    // Stop the scanner controls (decoding loop)
+    if (controlsRef.current) {
+      controlsRef.current.stop();
+      controlsRef.current = null;
+    }
+
+    // Stop video tracks manually just in case
     if (videoRef.current?.srcObject) {
       const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
       tracks.forEach((track) => track.stop());
       videoRef.current.srcObject = null;
     }
-    // Clear reader reference
+
+    // Reset reader
     if (readerRef.current) {
+      // readerRef.current.reset(); // BrowserMultiFormatReader might not have reset in type def depending on version, but controls.stop() does the job.
       readerRef.current = null;
     }
   }, []);
@@ -91,7 +100,7 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
           throw new Error("Invalid camera device ID");
         }
 
-        await reader.decodeFromVideoDevice(
+        const controls = await reader.decodeFromVideoDevice(
           deviceId,
           videoRef.current,
           (result) => {
@@ -105,6 +114,7 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
           }
         );
 
+        controlsRef.current = controls;
         setIsStarting(false);
       } catch (err) {
         console.error("Scanner error:", err);
