@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { Navigation } from "./navigation";
+import { cn } from "@/lib/utils";
 
 interface PageLayoutProps {
   children: ReactNode;
@@ -13,8 +14,8 @@ interface PageLayoutProps {
 const maxWidthClasses = {
   sm: "max-w-lg",
   md: "max-w-2xl",
-  lg: "max-w-4xl",
-  xl: "max-w-6xl",
+  lg: "max-w-5xl",
+  xl: "max-w-7xl",
   full: "max-w-full",
 };
 
@@ -25,23 +26,31 @@ export function PageLayout({
   maxWidth = "lg",
 }: PageLayoutProps) {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-slate-50">
       <Navigation />
-      <main className={`mx-auto px-4 pt-24 pb-12 sm:px-6 lg:px-8 ${maxWidthClasses[maxWidth]}`}>
-        {(title || description) && (
-          <div className="mb-8">
-            {title && (
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-                {title}
-              </h1>
-            )}
-            {description && (
-              <p className="mt-2 text-gray-600">{description}</p>
-            )}
-          </div>
-        )}
-        {children}
-      </main>
+      {/* Outer wrapper with proper padding */}
+      <div className="pt-32 pb-28 px-4 sm:px-6 lg:px-8">
+        <main
+          className={cn(
+            "mx-auto",
+            maxWidthClasses[maxWidth]
+          )}
+        >
+          {(title || description) && (
+            <div className="mb-10">
+              {title && (
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                  {title}
+                </h1>
+              )}
+              {description && (
+                <p className="mt-2 text-lg text-slate-600 max-w-2xl">{description}</p>
+              )}
+            </div>
+          )}
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
