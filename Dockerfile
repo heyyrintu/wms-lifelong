@@ -6,6 +6,9 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
+# Copy prisma directory because postinstall script runs 'prisma generate'
+COPY prisma ./prisma
+
 # Install ALL dependencies (including devDependencies) so that build works
 RUN npm ci
 
