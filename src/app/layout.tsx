@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { Outfit } from "next/font/google"; // Modern font
 import { Providers } from "@/components/providers";
 import "./globals.css";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -16,6 +23,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -25,7 +33,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className={`${outfit.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>
