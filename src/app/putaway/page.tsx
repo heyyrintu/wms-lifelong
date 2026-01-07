@@ -1,0 +1,362 @@
+"use client";
+
+import { useState, useCallback, useRef } from "react";
+import { toast } from "sonner";
+import { PageLayout } from "@/components/layout";
+import { ScannerField } from "@/components/scanner";
+import {
+  Card,
+  CardHeader,
+  Button,
+  ScannerInput,
+  Alert,
+  Badge,
+} from "@/components/ui";
+import { putaway } from "@/actions";
+import { Plus, Trash2, Check, RotateCcw } from "lucide-react";
+
+type FormStep = "location" | "items" | "complete";
+
+interface PutawayItem {
+  skuCode: string;
+  qty: number;
+}
+
+export default function PutawayPage() {
+  const [step, setStep] = useState<FormStep>("location");
+  const [locationCode, setLocationCode] = useState("");
+  const [items, setItems] = useState<PutawayItem[]>([]);
+  const [currentSku, setCurrentSku] = useState("");
+  const [currentQty, setCurrentQty] = useState<string>("1");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastResult, setLastResult] = useState<{
+    locationCode: string;
+    items: Array<{ skuCode: string; qty: number }>;
+  } | null>(null);
+
+  const qtyInputRef = useRef<HTMLInputElement>(null);
+
+  // Step 1: Location scan
+  const handleLocationSubmit = useCallback(() => {
+    if (locationCode.trim()) {
+      setStep("items");
+    }
+  }, [locationCode]);
+
+  // Step 2: Add SKU
+  const handleSkuSubmit = useCallback(() => {
+    if (currentSku.trim()) {
+      qtyInputRef.current?.focus();
+      qtyInputRef.current?.select();
+    }
+  }, [currentSku]);
+
+  // Add item to list
+  const handleAddItem = useCallback(() => {
+    const qty = parseInt(currentQty, 10);
+    if (!currentSku.trim() || isNaN(qty) || qty <= 0) {
+      toast.error("Enter a valid SKU and quantity");
+      return;
+    }
+
+    // Check if SKU already exists in list
+    const existingIndex = items.findIndex(
+      (item) => item.skuCode === currentSku.toUpperCase()
+    );
+
+    if (existingIndex >= 0) {
+      // Update existing item
+      const updatedItems = [...items];
+      updatedItems[existingIndex] = {
+        ...updatedItems[existingIndex],
+        skuCode: updatedItems[existingIndex]?.skuCode ?? currentSku.toUpperCase(),
+        qty: (updatedItems[existingIndex]?.qty ?? 0) + qty,
+      };
+      setItems(updatedItems);
+      toast.success(`Updated ${currentSku} quantity`);
+    } else {
+      // Add new item
+      setItems([...items, { skuCode: currentSku.toUpperCase(), qty }]);
+      toast.success(`Added ${currentSku}`);
+    }
+
+    setCurrentSku("");
+    setCurrentQty("1");
+  }, [currentSku, currentQty, items]);
+
+  // Remove item
+  const handleRemoveItem = useCallback((index: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  // Submit putaway
+  const handleSubmitPutaway = useCallback(async () => {
+    if (items.length === 0) {
+      toast.error("Add at least one item");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = await putaway({
+        locationCode: locationCode.toUpperCase(),
+        items,
+        user: "system",
+      });
+
+      if (result.success) {
+        toast.success(`Putaway complete! ${items.length} SKU(s) added.`);
+        setLastResult({ locationCode, items });
+        setStep("complete");
+      } else {
+        toast.error(result.error ?? "Putaway failed");
+      }
+    } catch {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [locationCode, items]);
+
+  // Reset for new putaway
+  const handleReset = useCallback(() => {
+    setStep("location");
+    setLocationCode("");
+    setItems([]);
+    setCurrentSku("");
+    setCurrentQty("1");
+    setLastResult(null);
+  }, []);
+
+  // Continue at same location
+  const handleContinueSameLocation = useCallback(() => {
+    setStep("items");
+    setItems([]);
+    setCurrentSku("");
+    setCurrentQty("1");
+  }, []);
+
+  // Handle qty input keydown
+  const handleQtyKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleAddItem();
+      }
+    },
+    [handleAddItem]
+  );
+
+  return (
+    <PageLayout
+      title="Putaway"
+      description="Scan location, then scan SKUs to add inventory"
+      maxWidth="md"
+    >
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mb-6">
+        <Badge variant={step === "location" ? "info" : "success"}>
+          1. Location
+        </Badge>
+        <span className="text-gray-300">→</span>
+        <Badge
+          variant={
+            step === "items" ? "info" : step === "complete" ? "success" : "default"
+          }
+        >
+          2. Scan Items
+        </Badge>
+        <span className="text-gray-300">→</span>
+        <Badge variant={step === "complete" ? "success" : "default"}>
+          3. Complete
+        </Badge>
+      </div>
+
+      {/* Step 1: Location */}
+      {step === "location" && (
+        <Card>
+          <CardHeader
+            title="Step 1: Scan Location"
+            description="Scan or enter the location code"
+          />
+          <ScannerField
+            label="Location Code"
+            value={locationCode}
+            onChange={setLocationCode}
+            onSubmit={handleLocationSubmit}
+            placeholder="e.g., A1-R02-S03-B04"
+            autoFocus
+          />
+          <div className="mt-4">
+            <Button
+              onClick={handleLocationSubmit}
+              disabled={!locationCode.trim()}
+              size="lg"
+              className="w-full"
+            >
+              Continue to Scan Items
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Step 2: Items */}
+      {step === "items" && (
+        <div className="space-y-4">
+          {/* Location info */}
+          <Alert
+            type="info"
+            message={`Adding items to location: ${locationCode}`}
+          />
+
+          {/* Add item form */}
+          <Card>
+            <CardHeader
+              title="Step 2: Scan SKUs"
+              description="Scan SKU, enter quantity, then add"
+            />
+
+            <div className="space-y-4">
+              <ScannerField
+                label="SKU Code"
+                value={currentSku}
+                onChange={setCurrentSku}
+                onSubmit={handleSkuSubmit}
+                placeholder="Scan or enter SKU"
+                autoFocus
+              />
+
+              <div>
+                <ScannerInput
+                  ref={qtyInputRef}
+                  label="Quantity"
+                  type="number"
+                  value={currentQty}
+                  onChange={(e) => setCurrentQty(e.target.value)}
+                  onKeyDown={handleQtyKeyDown}
+                  min={1}
+                  className="normal-case!"
+                />
+              </div>
+
+              <Button
+                onClick={handleAddItem}
+                disabled={!currentSku.trim() || !currentQty}
+                size="lg"
+                className="w-full"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Item
+              </Button>
+            </div>
+          </Card>
+
+          {/* Items list */}
+          {items.length > 0 && (
+            <Card>
+              <CardHeader
+                title={`Items to Putaway (${items.length})`}
+                action={
+                  <Badge variant="info">
+                    Total: {items.reduce((sum, item) => sum + item.qty, 0)} units
+                  </Badge>
+                }
+              />
+
+              <div className="divide-y divide-gray-100">
+                {items.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-3"
+                  >
+                    <div>
+                      <span className="font-mono font-semibold text-gray-900">
+                        {item.skuCode}
+                      </span>
+                      <span className="ml-3 text-gray-500">
+                        Qty: {item.qty}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveItem(index)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 pt-4 border-t flex gap-3">
+                <Button
+                  variant="secondary"
+                  onClick={handleReset}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitPutaway}
+                  loading={isSubmitting}
+                  className="flex-1"
+                  size="lg"
+                >
+                  <Check className="w-5 h-5 mr-2" />
+                  Complete Putaway
+                </Button>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Step 3: Complete */}
+      {step === "complete" && lastResult && (
+        <Card>
+          <div className="text-center py-6">
+            <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+              <Check className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Putaway Complete!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {lastResult.items.length} SKU(s) added to{" "}
+              <span className="font-mono font-semibold">
+                {lastResult.locationCode}
+              </span>
+            </p>
+
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+              {lastResult.items.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between py-1 text-sm"
+                >
+                  <span className="font-mono">{item.skuCode}</span>
+                  <span className="text-gray-500">+{item.qty}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                onClick={handleContinueSameLocation}
+                className="flex-1"
+              >
+                Continue at {lastResult.locationCode}
+              </Button>
+              <Button onClick={handleReset} className="flex-1">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                New Putaway
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+    </PageLayout>
+  );
+}

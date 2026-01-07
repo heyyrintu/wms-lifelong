@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum MovementAction {
+  PUTAWAY
+  MOVE
+  ADJUST
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+/// Warehouse location (e.g., A1-R02-S03-B04)
+model Location {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  inventory        Inventory[]
+  movementsFrom    MovementLog[] @relation("FromLocation")
+  movementsTo      MovementLog[] @relation("ToLocation")
+
+  @@index([code])
+  @@map("locations")
+}
+
+/// Stock Keeping Unit
+model Sku {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique @db.VarChar(100)
+  name      String?  @db.VarChar(255)
+  barcode   String?  @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  inventory Inventory[]
+  movements MovementLog[]
+
+  @@index([code])
+  @@index([barcode])
+  @@map("skus")
+}
+
+/// Inventory record linking SKU to Location with quantity
+model Inventory {
+  id         String   @id @default(uuid()) @db.Uuid
+  locationId String   @map("location_id") @db.Uuid
+  skuId      String   @map("sku_id") @db.Uuid
+  qty        Int      @default(0)
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  sku      Sku      @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, skuId])
+  @@index([locationId])
+  @@index([skuId])
+  @@map("inventory")
+}
+
+/// Audit log for all inventory movements
+model MovementLog {
+  id             String         @id @default(uuid()) @db.Uuid
+  action         MovementAction
+  skuId          String         @map("sku_id") @db.Uuid
+  fromLocationId String?        @map("from_location_id") @db.Uuid
+  toLocationId   String?        @map("to_location_id") @db.Uuid
+  qty            Int
+  user           String         @db.VarChar(100)
+  note           String?        @db.Text
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  sku          Sku       @relation(fields: [skuId], references: [id], onDelete: Cascade)
+  fromLocation Location? @relation("FromLocation", fields: [fromLocationId], references: [id], onDelete: SetNull)
+  toLocation   Location? @relation("ToLocation", fields: [toLocationId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([skuId])
+  @@index([fromLocationId])
+  @@index([toLocationId])
+  @@index([createdAt])
+  @@map("movement_logs")
+}
