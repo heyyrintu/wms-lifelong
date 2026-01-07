@@ -51,24 +51,44 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
         const reader = new BrowserMultiFormatReader(hints);
         readerRef.current = reader;
 
+        // Explicitly request notification/permission for camera to ensure we get labels
+        let permissionStream: MediaStream | null = null;
+        try {
+          permissionStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+          });
+        } catch (err) {
+          console.warn("Could not get initial camera permission:", err);
+          // Continue anyway, maybe permission was already granted or we can try default
+        } finally {
+          // Stop the permission stream immediately as the reader will start its own
+          if (permissionStream) {
+            permissionStream.getTracks().forEach((track) => track.stop());
+          }
+        }
+
         const videoInputDevices =
           await BrowserMultiFormatReader.listVideoInputDevices();
 
         if (videoInputDevices.length === 0) {
-          throw new Error("No camera found");
+          throw new Error("No camera devices found");
         }
 
         // Prefer back camera on mobile
         const backCamera = videoInputDevices.find(
           (device) =>
             device.label.toLowerCase().includes("back") ||
-            device.label.toLowerCase().includes("rear")
+            device.label.toLowerCase().includes("rear") ||
+            device.label.toLowerCase().includes("environment")
         );
 
         const deviceId = backCamera?.deviceId ?? videoInputDevices[0]?.deviceId;
 
-        if (!videoRef.current || !deviceId) {
-          throw new Error("Video element or device not available");
+        if (!videoRef.current) {
+          throw new Error("Video element ref missing");
+        }
+        if (!deviceId) {
+          throw new Error("Invalid camera device ID");
         }
 
         await reader.decodeFromVideoDevice(
@@ -141,7 +161,7 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
           <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr" />
           <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl" />
           <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br" />
-          
+
           {/* Scanning line animation */}
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 animate-scan" />
         </div>
