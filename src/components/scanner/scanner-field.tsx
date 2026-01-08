@@ -51,12 +51,19 @@ export const ScannerField = forwardRef<HTMLInputElement, ScannerFieldProps>(func
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && value.trim()) {
+      if (e.key === "Enter") {
         e.preventDefault();
-        onSubmit();
+        // Read directly from input to handle fast barcode scanner input
+        const currentValue = inputRef.current?.value || "";
+        if (currentValue.trim()) {
+          // Small delay to ensure parent state is synced
+          setTimeout(() => {
+            onSubmit();
+          }, 10);
+        }
       }
     },
-    [value, onSubmit]
+    [onSubmit]
   );
 
   const handleChange = useCallback(

@@ -46,9 +46,15 @@ export default function PutawayPage() {
 
   // Step 1: Location scan - auto advance to items step
   const handleLocationSubmit = useCallback(() => {
-    // Use a small timeout to ensure state is updated after fast barcode scan
+    // Use a small timeout to ensure state is fully updated after fast barcode scan
     setTimeout(() => {
-      if (locationCode.trim()) {
+      // Check the actual input value as fallback (handles race condition with barcode scanners)
+      const locationValue = locationInputRef.current?.value || locationCode;
+      if (locationValue.trim()) {
+        // Update state if needed
+        if (locationValue !== locationCode) {
+          setLocationCode(locationValue.toUpperCase());
+        }
         setStep("items");
         // Focus on SKU input after transition
         setTimeout(() => {
@@ -60,9 +66,15 @@ export default function PutawayPage() {
 
   // Step 2: Add SKU - auto focus quantity field
   const handleSkuSubmit = useCallback(() => {
-    // Use a small timeout to ensure state is updated after fast barcode scan
+    // Use a small timeout to ensure state is fully updated after fast barcode scan
     setTimeout(() => {
-      if (currentSku.trim()) {
+      // Check the actual input value as fallback (handles race condition with barcode scanners)
+      const skuValue = skuInputRef.current?.value || currentSku;
+      if (skuValue.trim()) {
+        // Update state if needed
+        if (skuValue !== currentSku) {
+          setCurrentSku(skuValue.toUpperCase());
+        }
         qtyInputRef.current?.focus();
         qtyInputRef.current?.select();
       }

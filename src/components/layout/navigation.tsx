@@ -61,7 +61,10 @@ export function Navigation() {
 
   // Bottom nav items
   const bottomNavItems = navigation.slice(0, 4);
-  const moreItems = navigation.slice(4);
+  // Exclude Settings from the generic more items to avoid duplication
+  const moreItems = navigation
+    .slice(4)
+    .filter((item) => item.href !== "/settings");
 
   return (
     <>
@@ -167,6 +170,19 @@ export function Navigation() {
                           </Link>
                         );
                       })}
+                      <div className="border-t border-slate-100 mt-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDesktopMenuOpen(false);
+                            logout();
+                          }}
+                          className="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all duration-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span className="font-medium">Logout</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -330,6 +346,17 @@ export function Navigation() {
                   <Settings className="w-5 h-5" />
                   <span className="font-medium">Settings</span>
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                  }}
+                  className="flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all duration-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">Logout</span>
+                </button>
               </div>
             </div>
           </div>
