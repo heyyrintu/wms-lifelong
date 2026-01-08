@@ -190,8 +190,7 @@ export default function LogsPage() {
                     <th className="px-4 py-3">Timestamp</th>
                     <th className="px-4 py-3">Action</th>
                     <th className="px-4 py-3">EN</th>
-                    <th className="px-4 py-3">From</th>
-                    <th className="px-4 py-3">To</th>
+                    <th className="px-4 py-3">Location</th>
                     <th className="px-4 py-3 text-right">Qty</th>
                     <th className="px-4 py-3">User</th>
                     <th className="px-4 py-3">Note</th>
@@ -224,14 +223,12 @@ export default function LogsPage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 font-mono text-sm text-gray-600">
-                          {log.fromLocationCode ?? "-"}
-                        </td>
                         <td className="px-4 py-3">
-                          {log.fromLocationCode && log.toLocationCode ? (
-                            <span className="flex items-center gap-1 font-mono text-sm text-gray-600">
-                              <ArrowRight className="w-3 h-3 text-gray-400" />
-                              {log.toLocationCode}
+                          {log.action === "MOVE" ? (
+                            <span className="flex items-center gap-2 font-mono text-sm text-gray-600">
+                              <span>{log.fromLocationCode ?? "-"}</span>
+                              <ArrowRight className="w-4 h-4 text-blue-500" />
+                              <span>{log.toLocationCode ?? "-"}</span>
                             </span>
                           ) : (
                             <span className="font-mono text-sm text-gray-600">
