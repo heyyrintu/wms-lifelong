@@ -55,7 +55,7 @@ export default function PutawayPage() {
   const handleAddItem = useCallback(() => {
     const qty = parseInt(currentQty, 10);
     if (!currentSku.trim() || isNaN(qty) || qty <= 0) {
-      toast.error("Enter a valid SKU and quantity");
+      toast.error("Enter a valid EN and quantity");
       return;
     }
 
@@ -105,7 +105,7 @@ export default function PutawayPage() {
       });
 
       if (result.success) {
-        toast.success(`Putaway complete! ${items.length} SKU(s) added.`);
+        toast.success(`Putaway complete! ${items.length} EN(s) added.`);
         setLastResult({ locationCode, items });
         setStep("complete");
       } else {
@@ -150,7 +150,7 @@ export default function PutawayPage() {
   return (
     <PageLayout
       title="Putaway"
-      description="Scan location, then scan SKUs to add inventory"
+      description="Scan location, then scan ENs to add inventory"
       maxWidth="md"
     >
       {/* Step indicator */}
@@ -212,17 +212,17 @@ export default function PutawayPage() {
           {/* Add item form */}
           <Card>
             <CardHeader
-              title="Step 2: Scan SKUs"
-              description="Scan SKU, enter quantity, then add"
+              title="Step 2: Scan ENs"
+              description="Scan EN, enter quantity, then add"
             />
 
             <div className="space-y-4">
               <ScannerField
-                label="SKU Code"
+                label="EN Code"
                 value={currentSku}
                 onChange={setCurrentSku}
                 onSubmit={handleSkuSubmit}
-                placeholder="Scan or enter SKU"
+                placeholder="Scan or enter EN"
                 autoFocus
               />
 
@@ -323,7 +323,7 @@ export default function PutawayPage() {
               Putaway Complete!
             </h2>
             <p className="text-gray-600 mb-6">
-              {lastResult.items.length} SKU(s) added to{" "}
+              {lastResult.items.length} EN(s) added to{" "}
               <span className="font-mono font-semibold">
                 {lastResult.locationCode}
               </span>

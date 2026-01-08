@@ -25,7 +25,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
     if (!sku) {
       return NextResponse.json(
-        { error: `SKU "${skuCode}" not found` },
+        { error: `EN "${skuCode}" not found` },
         { status: 404 }
       );
     }
@@ -48,7 +48,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
   } catch (error) {
     console.error("Get SKU inventory error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch SKU inventory" },
+      { error: "Failed to fetch EN inventory" },
       { status: 500 }
     );
   }

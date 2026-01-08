@@ -41,7 +41,7 @@ export default function LookupSkuPage() {
   } = useQuery<SkuInventory>({
     queryKey: ["sku-inventory", submittedCode],
     queryFn: async () => {
-      if (!submittedCode) throw new Error("No SKU code");
+      if (!submittedCode) throw new Error("No EN code");
       const res = await fetch(`/api/inventory/sku/${encodeURIComponent(submittedCode)}`);
       if (!res.ok) {
         const data = await res.json();
@@ -67,18 +67,18 @@ export default function LookupSkuPage() {
 
   return (
     <PageLayout
-      title="Lookup by SKU"
-      description="Scan a SKU to find its locations"
+      title="Lookup by EN"
+      description="Scan an EN to find its locations"
       maxWidth="md"
     >
       {/* Search form */}
       <Card className="mb-6">
         <ScannerField
-          label="SKU Code"
+          label="EN Code"
           value={searchCode}
           onChange={setSearchCode}
           onSubmit={handleSubmit}
-          placeholder="Scan or enter SKU code"
+          placeholder="Scan or enter EN code"
           autoFocus
         />
         <div className="mt-4 flex gap-3">
@@ -95,13 +95,13 @@ export default function LookupSkuPage() {
       </Card>
 
       {/* Results */}
-      {isLoading && <PageLoader message="Loading SKU locations..." />}
+      {isLoading && <PageLoader message="Loading EN locations..." />}
 
       {error && (
         <Alert
           type="error"
-          title="SKU Not Found"
-          message={error instanceof Error ? error.message : "Failed to lookup SKU"}
+          title="EN Not Found"
+          message={error instanceof Error ? error.message : "Failed to lookup EN"}
         />
       )}
 
@@ -139,7 +139,7 @@ export default function LookupSkuPage() {
             <EmptyState
               icon={<MapPin className="w-8 h-8" />}
               title="No Stock"
-              description="This SKU has no inventory in any location"
+              description="This EN has no inventory in any location"
             />
           ) : (
             <div className="overflow-x-auto">

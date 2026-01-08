@@ -115,7 +115,7 @@ export default function LookupLocationPage() {
             }
             action={
               <div className="flex gap-2">
-                <Badge variant="info">{inventory.totalItems} SKUs</Badge>
+                <Badge variant="info">{inventory.totalItems} ENs</Badge>
                 <Badge variant="success">{inventory.totalQty} units</Badge>
               </div>
             }
@@ -132,7 +132,7 @@ export default function LookupLocationPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 text-left">
-                    <th className="pb-3 font-semibold text-gray-600">SKU</th>
+                    <th className="pb-3 font-semibold text-gray-600">EN</th>
                     <th className="pb-3 font-semibold text-gray-600">Name</th>
                     <th className="pb-3 font-semibold text-gray-600 text-right">
                       Qty

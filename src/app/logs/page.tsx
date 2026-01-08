@@ -112,10 +112,10 @@ export default function LogsPage() {
           </div>
           <div>
             <ScannerInput
-              label="SKU Filter"
+              label="EN Filter"
               value={filters.sku}
               onChange={(e) => handleFilterChange("sku", e.target.value)}
-              placeholder="Filter by SKU"
+              placeholder="Filter by EN"
               className="py-2! text-base!"
             />
           </div>
@@ -189,7 +189,7 @@ export default function LogsPage() {
                   <tr className="bg-gray-50 text-left text-sm font-semibold text-gray-600">
                     <th className="px-4 py-3">Timestamp</th>
                     <th className="px-4 py-3">Action</th>
-                    <th className="px-4 py-3">SKU</th>
+                    <th className="px-4 py-3">EN</th>
                     <th className="px-4 py-3">From</th>
                     <th className="px-4 py-3">To</th>
                     <th className="px-4 py-3 text-right">Qty</th>
@@ -241,11 +241,10 @@ export default function LogsPage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <span
-                            className={`font-semibold ${
-                              log.action === "ADJUST" && log.qty < 0
+                            className={`font-semibold ${log.action === "ADJUST" && log.qty < 0
                                 ? "text-red-600"
                                 : "text-green-600"
-                            }`}
+                              }`}
                           >
                             {log.qty > 0 ? "+" : ""}
                             {log.qty}

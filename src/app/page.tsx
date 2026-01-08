@@ -6,7 +6,7 @@ import { Package, MapPin, Barcode, ArrowRightLeft, Search, ScanLine, Lightbulb }
 const actions = [
   {
     title: "Putaway",
-    description: "Scan location and SKUs to add inventory",
+    description: "Scan location and ENs to add inventory",
     href: "/putaway",
     icon: Package,
     gradient: "from-blue-500 to-indigo-600",
@@ -15,7 +15,7 @@ const actions = [
   },
   {
     title: "Lookup Location",
-    description: "View all SKUs at a location",
+    description: "View all ENs at a location",
     href: "/lookup/location",
     icon: MapPin,
     gradient: "from-emerald-500 to-teal-600",
@@ -23,8 +23,8 @@ const actions = [
     colSpan: "col-span-1",
   },
   {
-    title: "Lookup SKU",
-    description: "Find where a SKU is stored",
+    title: "Lookup EN",
+    description: "Find where an EN is stored",
     href: "/lookup/sku",
     icon: Barcode,
     gradient: "from-violet-500 to-purple-600",

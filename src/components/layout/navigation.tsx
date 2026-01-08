@@ -20,7 +20,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutGrid },
   { name: "Putaway", href: "/putaway", icon: Package },
   { name: "Lookup Location", href: "/lookup/location", icon: MapPin },
-  { name: "Lookup SKU", href: "/lookup/sku", icon: Barcode },
+  { name: "Lookup EN", href: "/lookup/sku", icon: Barcode },
   { name: "Move Inventory", href: "/move", icon: ArrowRightLeft },
   { name: "Audit Log", href: "/logs", icon: Search },
 ];

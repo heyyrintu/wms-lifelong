@@ -68,12 +68,12 @@ export default function MovePage() {
         const result = await getAvailableQty(state.fromLocation, code);
 
         if (!result.success) {
-          setError(result.error ?? "Failed to check SKU");
+          setError(result.error ?? "Failed to check EN");
           return;
         }
 
         if (result.data?.qty === 0) {
-          setError(`SKU ${code} not found at location ${state.fromLocation}`);
+          setError(`EN ${code} not found at location ${state.fromLocation}`);
           return;
         }
 
@@ -92,7 +92,7 @@ export default function MovePage() {
           qtyInputRef.current?.select();
         }, 100);
       } catch {
-        setError("Failed to check SKU availability");
+        setError("Failed to check EN availability");
       } finally {
         setIsLoading(false);
       }
@@ -194,11 +194,11 @@ export default function MovePage() {
             step === "sku"
               ? "info"
               : ["qty", "to", "complete"].includes(step)
-              ? "success"
-              : "default"
+                ? "success"
+                : "default"
           }
         >
-          2. SKU
+          2. EN
         </Badge>
         <ArrowRight className="w-4 h-4 text-gray-300" />
         <Badge
@@ -206,8 +206,8 @@ export default function MovePage() {
             step === "qty"
               ? "info"
               : ["to", "complete"].includes(step)
-              ? "success"
-              : "default"
+                ? "success"
+                : "default"
           }
         >
           3. Qty
@@ -247,8 +247,8 @@ export default function MovePage() {
       {step === "sku" && (
         <Card>
           <CardHeader
-            title="Step 2: Select SKU"
-            description={`Scan the SKU at ${state.fromLocation}`}
+            title="Step 2: Select EN"
+            description={`Scan the EN at ${state.fromLocation}`}
           />
           <Alert
             type="info"
@@ -256,9 +256,9 @@ export default function MovePage() {
             className="mb-4"
           />
           <ScannerFieldWithState
-            label="SKU Code"
+            label="EN Code"
             onSubmit={handleSkuSubmit}
-            placeholder="Scan SKU to move"
+            placeholder="Scan EN to move"
             autoFocus
             disabled={isLoading}
           />
@@ -282,7 +282,7 @@ export default function MovePage() {
               <span className="font-mono font-semibold">{state.fromLocation}</span>
             </div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-600">SKU:</span>
+              <span className="text-gray-600">EN:</span>
               <span className="font-mono font-semibold">{state.skuCode}</span>
             </div>
             {state.skuName && (

@@ -13,8 +13,8 @@ export const locationCodeSchema = z
 
 export const skuCodeSchema = z
   .string()
-  .min(1, "SKU code is required")
-  .max(100, "SKU code must be 100 characters or less")
+  .min(1, "EN code is required")
+  .max(100, "EN code must be 100 characters or less")
   .trim()
   .toUpperCase();
 
