@@ -389,7 +389,7 @@ export default function SettingsPage() {
                   </div>
                   <p className="text-sm text-gray-600">
                     Import SKU data from &quot;Item Master (1).xlsx&quot; to map EAN codes to Item Codes.
-                    This will create new SKUs and update existing ones with Item Code mappings.
+                    This will create new SKUs and update existing ones with Item Code mappings and details.
                   </p>
                 </div>
               </div>
@@ -416,7 +416,7 @@ export default function SettingsPage() {
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800">
                 <strong>Note:</strong> The import file &quot;Item Master (1).xlsx&quot; must be placed in the project root directory. 
-                The import process will read EAN codes from column G and Item Codes from column A.
+                The import process will read: Item Code (Column A), EAN (Column G), Item Name, and Details/Item Details columns.
               </p>
             </div>
           </div>

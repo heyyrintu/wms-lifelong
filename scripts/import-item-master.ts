@@ -31,6 +31,7 @@ async function importItemMaster() {
       const itemCode = String(row["Item Code"] ?? "").trim();
       const ean = String(row["EAN"] ?? "").trim();
       const itemName = String(row["Item Name"] ?? "").trim();
+      const details = String(row["Details"] ?? row["Item Details"] ?? "").trim();
       
       // Skip rows without EAN or Item Code
       if (!ean || !itemCode) {
@@ -45,11 +46,13 @@ async function importItemMaster() {
           update: {
             itemCode: itemCode.toUpperCase(),
             name: itemName || null,
+            details: details || null,
           },
           create: {
             code: ean.toUpperCase(),
             itemCode: itemCode.toUpperCase(),
             name: itemName || null,
+            details: details || null,
           },
         });
         
