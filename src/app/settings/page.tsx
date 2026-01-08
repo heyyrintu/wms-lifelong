@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { PageLayout } from "@/components/layout";
 import { Card, CardHeader, Button, Alert } from "@/components/ui";
-import { RefreshCw, Database, Upload, Download, Smartphone, Check } from "lucide-react";
+import { RefreshCw, Database, Upload, Download, Smartphone, Check, User, Lock, Edit2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { account } from "@/lib/appwrite";
 import { toast } from "sonner";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -19,6 +20,18 @@ export default function SettingsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  
+  // User profile update states
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
+  
+  // Password change states
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
     // Load settings from env variables
@@ -100,29 +113,219 @@ export default function SettingsPage() {
     }
   };
 
+  const handleUpdateName = async () => {
+    if (!newName.trim()) {
+      toast.error("Name cannot be empty");
+      return;
+    }
+
+    setIsUpdatingName(true);
+    try {
+      await account.updateName(newName.trim());
+      toast.success("Name updated successfully!");
+      setIsEditingName(false);
+      setNewName("");
+      // Refresh the page to update the user info
+      window.location.reload();
+    } catch (error) {
+      console.error("Update name error:", error);
+      toast.error("Failed to update name");
+    } finally {
+      setIsUpdatingName(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("All password fields are required");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      await account.updatePassword(newPassword, currentPassword);
+      toast.success("Password changed successfully!");
+      setIsChangingPassword(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error("Change password error:", error);
+      toast.error("Failed to change password. Check your current password.");
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   return (
     <PageLayout
       title="Settings"
       description="Configure application settings and preferences"
       maxWidth="lg"
     >
-      {/* User Info */}
+      {/* User Profile */}
       <Card className="mb-6">
-        <CardHeader title="User Information" />
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700">Name</span>
-            <span className="text-sm text-gray-900">{user?.name || "-"}</span>
+        <CardHeader 
+          title="User Profile" 
+          description="Manage your account information"
+        />
+        <div className="space-y-4">
+          {/* Name Section */}
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <User className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">Name</span>
+                </div>
+                {!isEditingName ? (
+                  <p className="text-base text-gray-900">{user?.name || "-"}</p>
+                ) : (
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Enter new name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
+              </div>
+              {!isEditingName ? (
+                <Button
+                  onClick={() => {
+                    setNewName(user?.name || "");
+                    setIsEditingName(true);
+                  }}
+                  variant="secondary"
+                  size="sm"
+                >
+                  <Edit2 className="w-4 h-4 mr-1" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setIsEditingName(false);
+                      setNewName("");
+                    }}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleUpdateName}
+                    disabled={isUpdatingName}
+                    size="sm"
+                  >
+                    {isUpdatingName ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700">Email</span>
-            <span className="text-sm text-gray-900">{user?.email || "-"}</span>
+
+          {/* Email Section (Read-only) */}
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-medium text-gray-700">Email</span>
+            </div>
+            <p className="text-base text-gray-900">{user?.email || "-"}</p>
+            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700">Role</span>
-            <span className={`text-sm font-semibold ${isAdmin ? "text-blue-600" : "text-gray-600"}`}>
-              {isAdmin ? "Admin" : "User"}
-            </span>
+
+          {/* Password Section */}
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Lock className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">Password</span>
+                </div>
+                {!isChangingPassword ? (
+                  <p className="text-base text-gray-900">••••••••</p>
+                ) : (
+                  <div className="space-y-3 mt-2">
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Current password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="New password (min 8 characters)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
+              </div>
+              {!isChangingPassword ? (
+                <Button
+                  onClick={() => setIsChangingPassword(true)}
+                  variant="secondary"
+                  size="sm"
+                >
+                  <Edit2 className="w-4 h-4 mr-1" />
+                  Change
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setIsChangingPassword(false);
+                      setCurrentPassword("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    }}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={isUpdatingPassword}
+                    size="sm"
+                  >
+                    {isUpdatingPassword ? "Updating..." : "Update"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Role Info */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">Role</span>
+              <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
+                isAdmin ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-700"
+              }`}>
+                {isAdmin ? "Admin" : "User"}
+              </span>
+            </div>
           </div>
         </div>
       </Card>
