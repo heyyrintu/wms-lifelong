@@ -77,15 +77,13 @@ export function Navigation() {
               href="/"
               className="flex items-center gap-3 group"
             >
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-300" />
-                <div className="relative bg-gradient-to-tr from-indigo-600 to-violet-500 p-2.5 rounded-xl shadow-lg shadow-indigo-500/25">
-                  <Package className="w-5 h-5 text-white" strokeWidth={2.5} />
-                </div>
+              <div className="relative h-10">
+                <img
+                  src="/logo.png"
+                  alt="WMS Logo"
+                  className="h-full w-auto object-contain"
+                />
               </div>
-              <span className="font-semibold text-lg text-slate-800 tracking-tight">
-                WHMapping
-              </span>
             </Link>
 
             {/* Center Navigation */}

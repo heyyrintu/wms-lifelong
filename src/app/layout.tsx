@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   },
   description: "Production-ready warehouse inventory location mapping system",
   keywords: ["warehouse", "inventory", "mapping", "putaway", "scanning"],
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export const viewport: Viewport = {
