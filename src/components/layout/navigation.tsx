@@ -13,8 +13,10 @@ import {
   MoreHorizontal,
   Settings,
   ChevronDown,
+  LogOut,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/contexts/auth-context";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutGrid },
@@ -27,6 +29,7 @@ const navigation = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const { logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
@@ -169,7 +172,7 @@ export function Navigation() {
               </div>
             </nav>
 
-            {/* Right side - Settings */}
+            {/* Right side - Settings & Logout */}
             <div className="flex items-center gap-2">
               <Link
                 href="/settings"
@@ -182,6 +185,13 @@ export function Navigation() {
               >
                 <Settings className="w-5 h-5 transition-transform duration-300 group-hover:rotate-45" />
               </Link>
+              <button
+                onClick={logout}
+                className="p-2.5 rounded-xl transition-all duration-200 group text-slate-400 hover:text-red-600 hover:bg-red-50"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
