@@ -275,12 +275,24 @@ export default function SettingsPage() {
                 Install App
               </Button>
             ) : (
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <strong>Installation not available.</strong> This app may already be installed, 
-                  or your browser doesn&apos;t support installation. Try accessing this page from Chrome, 
-                  Edge, or Safari on mobile.
-                </p>
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800 font-medium mb-2">
+                    How to Install Manually:
+                  </p>
+                  <div className="text-sm text-blue-700 space-y-2">
+                    <p><strong>Chrome/Edge (Desktop):</strong> Click the install icon (⊕) in the address bar, or go to Menu → &quot;Install Warehouse Mapping&quot;</p>
+                    <p><strong>Chrome (Android):</strong> Tap Menu (⋮) → &quot;Add to Home screen&quot; or &quot;Install app&quot;</p>
+                    <p><strong>Safari (iOS):</strong> Tap Share (↑) → &quot;Add to Home Screen&quot;</p>
+                  </div>
+                </div>
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    <strong>Note:</strong> The automatic install button requires HTTPS and a supported browser. 
+                    If you&apos;re on the production site (https://wmslifelong.cloud) and still don&apos;t see the install option, 
+                    use the manual installation methods above.
+                  </p>
+                </div>
               </div>
             )}
           </div>
