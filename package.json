@@ -12,6 +12,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "db:import": "tsx scripts/import-item-master.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -29,18 +30,23 @@
     "react-hook-form": "^7.54.2",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
+    "@serwist/next": "^9.5.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@types/sharp": "^0.31.1",
     "eslint": "^9.17.0",
     "eslint-config-next": "^15.1.0",
     "postcss": "^8.4.49",
     "prisma": "^6.1.0",
+    "serwist": "^9.5.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

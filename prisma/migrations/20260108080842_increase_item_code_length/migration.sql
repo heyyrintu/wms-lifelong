@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "skus" ALTER COLUMN "itemCode" SET DATA TYPE VARCHAR(255);

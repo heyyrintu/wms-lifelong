@@ -41,7 +41,7 @@ export default function LookupSkuPage() {
   } = useQuery<SkuInventory>({
     queryKey: ["sku-inventory", submittedCode],
     queryFn: async () => {
-      if (!submittedCode) throw new Error("No EN code");
+      if (!submittedCode) throw new Error("No EAN code");
       const res = await fetch(`/api/inventory/sku/${encodeURIComponent(submittedCode)}`);
       if (!res.ok) {
         const data = await res.json();

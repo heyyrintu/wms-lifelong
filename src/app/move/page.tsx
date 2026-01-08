@@ -265,9 +265,9 @@ export default function MovePage() {
           />
           <ScannerFieldWithState
             ref={skuInputRef}
-            label="EN Code"
+            label="EAN Code"
             onSubmit={handleSkuSubmit}
-            placeholder="Scan EN to move"
+            placeholder="Scan EAN to move"
             autoFocus
             disabled={isLoading}
           />

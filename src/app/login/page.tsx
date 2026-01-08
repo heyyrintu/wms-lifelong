@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { account } from "@/lib/appwrite";
-import { Button, ScannerInput } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { toast } from "sonner";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
-import Image from "next/image";
 
 export default function LoginPage() {
     const router = useRouter();

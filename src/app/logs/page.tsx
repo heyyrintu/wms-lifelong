@@ -23,7 +23,10 @@ import {
   ChevronRight,
   Edit,
   X,
+  Trash2,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import type { MovementRecord } from "@/lib/validators";
 import { adjustInventory } from "@/actions/adjust";
 import { useAuth } from "@/contexts/auth-context";
@@ -51,7 +54,7 @@ const actionColors = {
 };
 
 export default function LogsPage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [filters, setFilters] = useState({
     action: "",
     sku: "",
@@ -62,6 +65,8 @@ export default function LogsPage() {
   const [adjustQty, setAdjustQty] = useState<number>(0);
   const [adjustNote, setAdjustNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
   const limit = 20;
 
   const queryParams = useMemo(() => {
@@ -134,6 +139,103 @@ export default function LogsPage() {
     }
   };
 
+  const handleDelete = async (logId: string) => {
+    if (!confirm("Are you sure you want to delete this log entry? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/logs?id=${logId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete log");
+      }
+
+      refetch();
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete log entry");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} log entries? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch("/api/logs/bulk", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete logs");
+      }
+
+      setSelectedIds(new Set());
+      refetch();
+    } catch (error) {
+      console.error("Bulk delete error:", error);
+      alert("Failed to delete log entries");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (!data) return;
+    
+    if (selectedIds.size === data.data.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(data.data.map(log => log.id)));
+    }
+  };
+
+  const handleSelectOne = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleDownloadExcel = () => {
+    if (!data || data.data.length === 0) return;
+
+    // Prepare data for Excel export
+    const excelData = data.data.map((log) => ({
+      "Timestamp": formatDate(log.createdAt),
+      "Item Code": log.itemCode || "-",
+      "EAN CODE": log.skuCode,
+      "Location": log.toLocationCode || log.fromLocationCode || "-",
+      "Quantity": log.qty,
+      "User": log.user,
+      "Action": log.action === "PUTAWAY" ? "CYCLE COUNT" : log.action,
+    }));
+
+    // Create worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Audit Logs");
+
+    // Generate filename with current date
+    const date = new Date().toISOString().split("T")[0];
+    const filename = `audit-logs-${date}.xlsx`;
+
+    // Download file
+    XLSX.writeFile(workbook, filename);
+  };
+
   return (
     <PageLayout
       title="Audit Log"
@@ -177,12 +279,29 @@ export default function LogsPage() {
             />
           </div>
           <div className="flex items-end gap-2">
-            <Button onClick={() => refetch()} variant="secondary" className="flex-1">
-              <Search className="w-4 h-4 mr-2" />
+            <Button 
+              onClick={() => refetch()} 
+              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+              size="lg"
+            >
+              <Search className="w-5 h-5 mr-2" />
               Search
             </Button>
-            <Button onClick={handleClearFilters} variant="ghost">
-              <RotateCcw className="w-4 h-4" />
+            <Button 
+              onClick={handleDownloadExcel}
+              disabled={!data || data.data.length === 0}
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+              size="lg"
+            >
+              <Download className="w-5 h-5" />
+            </Button>
+            <Button 
+              onClick={handleClearFilters} 
+              variant="ghost" 
+              size="lg"
+              className="hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+            >
+              <RotateCcw className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -195,9 +314,23 @@ export default function LogsPage() {
         <Card padding="none">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">
-                {data.pagination.total} records found
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-500">
+                  {data.pagination.total} records found
+                </span>
+                {isAdmin && selectedIds.size > 0 && (
+                  <Button
+                    onClick={handleBulkDelete}
+                    disabled={isDeleting}
+                    variant="ghost"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    size="sm"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete {selectedIds.size} selected
+                  </Button>
+                )}
+              </div>
               {totalPages > 1 && (
                 <div className="flex items-center gap-2">
                   <Button
@@ -235,9 +368,20 @@ export default function LogsPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 text-left text-sm font-semibold text-gray-600">
+                    {isAdmin && (
+                      <th className="px-4 py-3 w-12">
+                        <input
+                          type="checkbox"
+                          checked={data.data.length > 0 && selectedIds.size === data.data.length}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </th>
+                    )}
                     <th className="px-4 py-3">Timestamp</th>
                     <th className="px-4 py-3">Action</th>
-                    <th className="px-4 py-3">EN</th>
+                    <th className="px-4 py-3">EAN CODE</th>
+                    <th className="px-4 py-3">SKU CODE</th>
                     <th className="px-4 py-3">Location</th>
                     <th className="px-4 py-3 text-right">Qty</th>
                     <th className="px-4 py-3">User</th>
@@ -250,6 +394,16 @@ export default function LogsPage() {
                     const Icon = actionIcons[log.action];
                     return (
                       <tr key={log.id} className="hover:bg-gray-50">
+                        {isAdmin && (
+                          <td className="px-4 py-3 w-12">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(log.id)}
+                              onChange={() => handleSelectOne(log.id)}
+                              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </td>
+                        )}
                         <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
                           {formatDate(log.createdAt)}
                         </td>
@@ -259,7 +413,7 @@ export default function LogsPage() {
                             className="inline-flex items-center gap-1"
                           >
                             <Icon className="w-3 h-3" />
-                            {log.action}
+                            {log.action === "PUTAWAY" ? "CYCLE COUNT" : log.action}
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
@@ -271,6 +425,11 @@ export default function LogsPage() {
                               <p className="text-xs text-gray-500">{log.skuName}</p>
                             )}
                           </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-sm text-gray-900">
+                            {log.itemCode || "-"}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
                           {log.action === "MOVE" ? (
@@ -312,16 +471,30 @@ export default function LogsPage() {
                           {log.note ?? "-"}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          {log.toLocationCode && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEdit(log)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          )}
+                          <div className="flex items-center justify-center gap-1">
+                            {log.toLocationCode && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEdit(log)}
+                                className="h-8 w-8 p-0 hover:bg-blue-50"
+                                title="Edit quantity"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDelete(log.id)}
+                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                title="Delete entry (Admin only)"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -352,10 +525,13 @@ export default function LogsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  EN Code
+                  EAN CODE
                 </label>
                 <div className="px-3 py-2 bg-gray-50 rounded-lg font-mono text-sm">
                   {editingLog.skuCode}
+                  {editingLog.itemCode && (
+                    <span className="text-xs text-gray-500 block">Item: {editingLog.itemCode}</span>
+                  )}
                   {editingLog.skuName && (
                     <span className="text-xs text-gray-500 block">{editingLog.skuName}</span>
                   )}

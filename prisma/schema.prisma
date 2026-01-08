@@ -41,6 +41,7 @@ model Location {
 model Sku {
   id        String   @id @default(uuid()) @db.Uuid
   code      String   @unique @db.VarChar(100)
+  itemCode  String?  @db.VarChar(255)
   name      String?  @db.VarChar(255)
   barcode   String?  @db.VarChar(100)
   createdAt DateTime @default(now()) @map("created_at")
@@ -52,6 +53,7 @@ model Sku {
 
   @@index([code])
   @@index([barcode])
+  @@index([itemCode])
   @@map("skus")
 }
 

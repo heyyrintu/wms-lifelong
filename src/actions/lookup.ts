@@ -75,7 +75,7 @@ export async function lookupBySku(
     if (!validated.success) {
       return {
         success: false,
-        error: validated.error.errors[0]?.message ?? "Invalid EN code",
+        error: validated.error.errors[0]?.message ?? "Invalid EAN code",
       };
     }
 

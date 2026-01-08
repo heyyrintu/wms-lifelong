@@ -13,8 +13,8 @@ export const locationCodeSchema = z
 
 export const skuCodeSchema = z
   .string()
-  .min(1, "EN code is required")
-  .max(100, "EN code must be 100 characters or less")
+  .min(1, "EAN code is required")
+  .max(100, "EAN code must be 100 characters or less")
   .trim()
   .toUpperCase();
 
@@ -34,6 +34,7 @@ export const optionalQuantitySchema = z
 
 export const putawayItemSchema = z.object({
   skuCode: skuCodeSchema,
+  itemCode: z.string().optional(),
   qty: quantitySchema,
 });
 
@@ -113,6 +114,7 @@ export interface InventoryRecord {
   id: string;
   locationCode: string;
   skuCode: string;
+  itemCode?: string | null;
   skuName?: string | null;
   qty: number;
   updatedAt: Date;
@@ -124,6 +126,7 @@ export interface LocationInventory {
   items: Array<{
     skuId: string;
     skuCode: string;
+    itemCode?: string | null;
     skuName?: string | null;
     qty: number;
   }>;
@@ -132,6 +135,7 @@ export interface LocationInventory {
 export interface SkuLocations {
   skuId: string;
   skuCode: string;
+  itemCode?: string | null;
   skuName?: string | null;
   locations: Array<{
     locationId: string;
@@ -145,6 +149,7 @@ export interface MovementRecord {
   id: string;
   action: "PUTAWAY" | "MOVE" | "ADJUST";
   skuCode: string;
+  itemCode?: string | null;
   skuName?: string | null;
   fromLocationCode?: string | null;
   toLocationCode?: string | null;

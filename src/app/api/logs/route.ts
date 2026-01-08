@@ -19,10 +19,10 @@ export async function GET(request: Request) {
     // Build where clause
     const where: {
       action?: "PUTAWAY" | "MOVE" | "ADJUST";
-      sku?: { code: string };
+      sku?: { code: { contains: string; mode: "insensitive" } };
       OR?: Array<{
-        fromLocation?: { code: string };
-        toLocation?: { code: string };
+        fromLocation?: { code: { contains: string; mode: "insensitive" } };
+        toLocation?: { code: { contains: string; mode: "insensitive" } };
       }>;
     } = {};
 
@@ -31,13 +31,13 @@ export async function GET(request: Request) {
     }
 
     if (skuCode) {
-      where.sku = { code: skuCode.toUpperCase() };
+      where.sku = { code: { contains: skuCode.toUpperCase(), mode: "insensitive" } };
     }
 
     if (locationCode) {
       where.OR = [
-        { fromLocation: { code: locationCode.toUpperCase() } },
-        { toLocation: { code: locationCode.toUpperCase() } },
+        { fromLocation: { code: { contains: locationCode.toUpperCase(), mode: "insensitive" } } },
+        { toLocation: { code: { contains: locationCode.toUpperCase(), mode: "insensitive" } } },
       ];
     }
 
@@ -60,6 +60,7 @@ export async function GET(request: Request) {
       id: log.id,
       action: log.action,
       skuCode: log.sku.code,
+      itemCode: log.sku.itemCode,
       skuName: log.sku.name,
       fromLocationCode: log.fromLocation?.code ?? null,
       toLocationCode: log.toLocation?.code ?? null,
@@ -82,6 +83,33 @@ export async function GET(request: Request) {
     console.error("Get movement logs error:", error);
     return NextResponse.json(
       { error: "Failed to fetch movement logs" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const logId = searchParams.get("id");
+
+    if (!logId) {
+      return NextResponse.json(
+        { error: "Log ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Delete the log entry
+    await prisma.movementLog.delete({
+      where: { id: logId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete movement log error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete movement log" },
       { status: 500 }
     );
   }

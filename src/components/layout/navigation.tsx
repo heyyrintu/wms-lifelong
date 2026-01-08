@@ -25,6 +25,7 @@ const navigation = [
   { name: "Lookup EN", href: "/lookup/sku", icon: Barcode },
   { name: "Move Inventory", href: "/move", icon: ArrowRightLeft },
   { name: "Audit Log", href: "/logs", icon: Search },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Navigation() {

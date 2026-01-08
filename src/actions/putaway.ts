@@ -49,7 +49,16 @@ export async function putaway(
 
         if (!sku) {
           sku = await tx.sku.create({
-            data: { code: item.skuCode },
+            data: { 
+              code: item.skuCode,
+              itemCode: item.itemCode || null,
+            },
+          });
+        } else if (item.itemCode && !sku.itemCode) {
+          // Update itemCode if SKU exists but doesn't have one
+          sku = await tx.sku.update({
+            where: { id: sku.id },
+            data: { itemCode: item.itemCode },
           });
         }
 

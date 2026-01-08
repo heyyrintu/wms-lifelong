@@ -13,13 +13,14 @@ import {
   Badge,
 } from "@/components/ui";
 import { putaway } from "@/actions";
-import { Plus, Trash2, Check, RotateCcw } from "lucide-react";
+import { Plus, Trash2, Check, RotateCcw, Edit, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
 type FormStep = "location" | "items" | "complete";
 
 interface PutawayItem {
   skuCode: string;
+  itemCode?: string;
   qty: number;
 }
 
@@ -29,8 +30,11 @@ export default function PutawayPage() {
   const [locationCode, setLocationCode] = useState("");
   const [items, setItems] = useState<PutawayItem[]>([]);
   const [currentSku, setCurrentSku] = useState("");
+  const [currentItemCode, setCurrentItemCode] = useState("");
   const [currentQty, setCurrentQty] = useState<string>("0");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editQty, setEditQty] = useState<string>("0");
   const [lastResult, setLastResult] = useState<{
     locationCode: string;
     items: Array<{ skuCode: string; qty: number }>;
@@ -58,7 +62,7 @@ export default function PutawayPage() {
   const handleAddItem = useCallback(() => {
     const qty = parseInt(currentQty, 10);
     if (!currentSku.trim() || isNaN(qty) || qty <= 0) {
-      toast.error("Enter a valid EN and quantity");
+      toast.error("Enter a valid EAN and quantity");
       return;
     }
 
@@ -76,25 +80,62 @@ export default function PutawayPage() {
         qty: (updatedItems[existingIndex]?.qty ?? 0) + qty,
       };
       setItems(updatedItems);
-      toast.success(`Updated ${currentSku} quantity`);
+      toast.success(`Updated ${currentItemCode || currentSku} quantity`);
     } else {
       // Add new item
-      setItems([...items, { skuCode: currentSku.toUpperCase(), qty }]);
-      toast.success(`Added ${currentSku}`);
+      setItems([...items, { 
+        skuCode: currentSku.toUpperCase(), 
+        itemCode: currentItemCode.trim() || undefined,
+        qty 
+      }]);
+      toast.success(`Added ${currentItemCode || currentSku}`);
     }
 
     setCurrentSku("");
+    setCurrentItemCode("");
     setCurrentQty("0");
     
     // Auto-focus back to SKU field for next item
     setTimeout(() => {
       skuInputRef.current?.focus();
     }, 100);
-  }, [currentSku, currentQty, items]);
+  }, [currentSku, currentItemCode, currentQty, items]);
 
   // Remove item
   const handleRemoveItem = useCallback((index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  // Edit item
+  const handleEditItem = useCallback((index: number) => {
+    setEditingIndex(index);
+    setEditQty(items[index]?.qty.toString() ?? "0");
+  }, [items]);
+
+  // Update item quantity
+  const handleUpdateItem = useCallback((index: number) => {
+    const qty = parseInt(editQty, 10);
+    if (isNaN(qty) || qty <= 0) {
+      toast.error("Enter a valid quantity");
+      return;
+    }
+
+    setItems((prev) => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], qty };
+      }
+      return updated;
+    });
+    toast.success("Quantity updated");
+    setEditingIndex(null);
+    setEditQty("0");
+  }, [editQty]);
+
+  // Cancel edit
+  const handleCancelEdit = useCallback(() => {
+    setEditingIndex(null);
+    setEditQty("0");
   }, []);
 
   // Submit putaway
@@ -227,13 +268,23 @@ export default function PutawayPage() {
             <div className="space-y-4">
               <ScannerField
                 ref={skuInputRef}
-                label="EN Code"
+                label="EAN Code"
                 value={currentSku}
                 onChange={setCurrentSku}
                 onSubmit={handleSkuSubmit}
-                placeholder="Scan or enter EN"
+                placeholder="Scan or enter EAN"
                 autoFocus
               />
+
+              <div>
+                <ScannerInput
+                  label="Item Code (Optional)"
+                  value={currentItemCode}
+                  onChange={(e) => setCurrentItemCode(e.target.value)}
+                  placeholder="Enter Item/SKU Code if EAN not available"
+                  className="normal-case!"
+                />
+              </div>
 
               <div>
                 <ScannerInput
@@ -278,22 +329,80 @@ export default function PutawayPage() {
                     key={index}
                     className="flex items-center justify-between py-3"
                   >
-                    <div>
-                      <span className="font-mono font-semibold text-gray-900">
-                        {item.skuCode}
-                      </span>
-                      <span className="ml-3 text-gray-500">
-                        Qty: {item.qty}
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveItem(index)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {editingIndex === index ? (
+                      <>
+                        <div className="flex items-center gap-3 flex-1">
+                          <div>
+                            <span className="font-mono font-semibold text-gray-900">
+                              {item.itemCode || item.skuCode}
+                            </span>
+                            {item.itemCode && (
+                              <p className="text-xs text-gray-500">EAN: {item.skuCode}</p>
+                            )}
+                          </div>
+                          <input
+                            type="number"
+                            value={editQty}
+                            onChange={(e) => setEditQty(e.target.value)}
+                            className="w-24 px-2 py-1 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            min={1}
+                            autoFocus
+                          />
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUpdateItem(index)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCancelEdit}
+                            className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <div>
+                            <span className="font-mono font-semibold text-gray-900">
+                              {item.itemCode || item.skuCode}
+                            </span>
+                            {item.itemCode && (
+                              <p className="text-xs text-gray-500">EAN: {item.skuCode}</p>
+                            )}
+                          </div>
+                          <span className="ml-3 text-gray-500">
+                            Qty: {item.qty}
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditItem(index)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveItem(index)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
