@@ -84,6 +84,9 @@ export function Navigation() {
                   className="h-full w-auto object-contain"
                 />
               </div>
+              <span className="font-semibold text-lg text-slate-800 tracking-tight">
+                WH Mapping
+              </span>
             </Link>
 
             {/* Center Navigation */}
