@@ -105,7 +105,7 @@ export default function LogsPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Actions</option>
-              <option value="PUTAWAY">Putaway</option>
+              <option value="PUTAWAY">Cycle Count</option>
               <option value="MOVE">Move</option>
               <option value="ADJUST">Adjust</option>
             </select>
@@ -242,8 +242,8 @@ export default function LogsPage() {
                         <td className="px-4 py-3 text-right">
                           <span
                             className={`font-semibold ${log.action === "ADJUST" && log.qty < 0
-                                ? "text-red-600"
-                                : "text-green-600"
+                              ? "text-red-600"
+                              : "text-green-600"
                               }`}
                           >
                             {log.qty > 0 ? "+" : ""}

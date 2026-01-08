@@ -105,11 +105,11 @@ export default function PutawayPage() {
       });
 
       if (result.success) {
-        toast.success(`Putaway complete! ${items.length} EN(s) added.`);
+        toast.success(`Cycle Count complete! ${items.length} EN(s) added.`);
         setLastResult({ locationCode, items });
         setStep("complete");
       } else {
-        toast.error(result.error ?? "Putaway failed");
+        toast.error(result.error ?? "Cycle Count failed");
       }
     } catch {
       toast.error("An unexpected error occurred");
@@ -149,7 +149,7 @@ export default function PutawayPage() {
 
   return (
     <PageLayout
-      title="Putaway"
+      title="Cycle Count"
       description="Scan location, then scan ENs to add inventory"
       maxWidth="md"
     >
@@ -255,7 +255,7 @@ export default function PutawayPage() {
           {items.length > 0 && (
             <Card>
               <CardHeader
-                title={`Items to Putaway (${items.length})`}
+                title={`Items to Count (${items.length})`}
                 action={
                   <Badge variant="info">
                     Total: {items.reduce((sum, item) => sum + item.qty, 0)} units
@@ -304,7 +304,7 @@ export default function PutawayPage() {
                   size="lg"
                 >
                   <Check className="w-5 h-5 mr-2" />
-                  Complete Putaway
+                  Complete Cycle Count
                 </Button>
               </div>
             </Card>
@@ -320,7 +320,7 @@ export default function PutawayPage() {
               <Check className="w-8 h-8 text-green-600" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Putaway Complete!
+              Cycle Count Complete!
             </h2>
             <p className="text-gray-600 mb-6">
               {lastResult.items.length} EN(s) added to{" "}
@@ -351,7 +351,7 @@ export default function PutawayPage() {
               </Button>
               <Button onClick={handleReset} className="flex-1">
                 <RotateCcw className="w-4 h-4 mr-2" />
-                New Putaway
+                New Cycle Count
               </Button>
             </div>
           </div>

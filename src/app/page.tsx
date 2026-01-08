@@ -5,7 +5,7 @@ import { Package, MapPin, Barcode, ArrowRightLeft, Search, ScanLine, Lightbulb }
 
 const actions = [
   {
-    title: "Putaway",
+    title: "Cycle Count",
     description: "Scan location and ENs to add inventory",
     href: "/putaway",
     icon: Package,
