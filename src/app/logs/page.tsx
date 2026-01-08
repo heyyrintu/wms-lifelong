@@ -216,6 +216,7 @@ export default function LogsPage() {
     const excelData = data.data.map((log) => ({
       "Timestamp": formatDate(log.createdAt),
       "Item Code": log.itemCode || "-",
+      "Item Name": log.skuName || "-",
       "EAN CODE": log.skuCode,
       "Location": log.toLocationCode || log.fromLocationCode || "-",
       "Quantity": log.qty,
@@ -226,11 +227,11 @@ export default function LogsPage() {
     // Create worksheet and workbook
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Audit Logs");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Records");
 
     // Generate filename with current date
     const date = new Date().toISOString().split("T")[0];
-    const filename = `audit-logs-${date}.xlsx`;
+    const filename = `records-${date}.xlsx`;
 
     // Download file
     XLSX.writeFile(workbook, filename);
@@ -238,7 +239,7 @@ export default function LogsPage() {
 
   return (
     <PageLayout
-      title="Audit Log"
+      title="Records"
       description="View all inventory movements"
       maxWidth="xl"
     >
@@ -313,8 +314,8 @@ export default function LogsPage() {
       {data && (
         <Card padding="none">
           <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm text-gray-500">
                   {data.pagination.total} records found
                 </span>

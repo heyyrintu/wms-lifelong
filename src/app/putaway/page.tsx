@@ -37,25 +37,36 @@ export default function PutawayPage() {
   const [editQty, setEditQty] = useState<string>("0");
   const [lastResult, setLastResult] = useState<{
     locationCode: string;
-    items: Array<{ skuCode: string; qty: number }>;
+    items: Array<{ skuCode: string; skuName: string | null; qty: number }>;
   } | null>(null);
 
   const qtyInputRef = useRef<HTMLInputElement>(null);
   const skuInputRef = useRef<HTMLInputElement>(null);
+  const locationInputRef = useRef<HTMLInputElement>(null);
 
-  // Step 1: Location scan
+  // Step 1: Location scan - auto advance to items step
   const handleLocationSubmit = useCallback(() => {
-    if (locationCode.trim()) {
-      setStep("items");
-    }
+    // Use a small timeout to ensure state is updated after fast barcode scan
+    setTimeout(() => {
+      if (locationCode.trim()) {
+        setStep("items");
+        // Focus on SKU input after transition
+        setTimeout(() => {
+          skuInputRef.current?.focus();
+        }, 100);
+      }
+    }, 50);
   }, [locationCode]);
 
-  // Step 2: Add SKU
+  // Step 2: Add SKU - auto focus quantity field
   const handleSkuSubmit = useCallback(() => {
-    if (currentSku.trim()) {
-      qtyInputRef.current?.focus();
-      qtyInputRef.current?.select();
-    }
+    // Use a small timeout to ensure state is updated after fast barcode scan
+    setTimeout(() => {
+      if (currentSku.trim()) {
+        qtyInputRef.current?.focus();
+        qtyInputRef.current?.select();
+      }
+    }, 50);
   }, [currentSku]);
 
   // Add item to list
@@ -153,9 +164,15 @@ export default function PutawayPage() {
         user: user?.name || user?.email || "system",
       });
 
-      if (result.success) {
+      if (result.success && result.data) {
         toast.success(`Cycle Count complete! ${items.length} EN(s) added.`);
-        setLastResult({ locationCode, items });
+        // Map result data to include skuName
+        const itemsWithNames = result.data.map(record => ({
+          skuCode: record.skuCode,
+          skuName: record.skuName ?? null,
+          qty: items.find(i => i.skuCode === record.skuCode)?.qty || 0
+        }));
+        setLastResult({ locationCode, items: itemsWithNames });
         setStep("complete");
       } else {
         toast.error(result.error ?? "Cycle Count failed");
@@ -165,7 +182,7 @@ export default function PutawayPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [locationCode, items]);
+  }, [locationCode, items, user]);
 
   // Reset for new putaway
   const handleReset = useCallback(() => {
@@ -229,6 +246,7 @@ export default function PutawayPage() {
             description="Scan or enter the location code"
           />
           <ScannerField
+            ref={locationInputRef}
             label="Location Code"
             value={locationCode}
             onChange={setLocationCode}
@@ -451,10 +469,15 @@ export default function PutawayPage() {
               {lastResult.items.map((item, index) => (
                 <div
                   key={index}
-                  className="flex justify-between py-1 text-sm"
+                  className="flex justify-between py-2 text-sm border-b last:border-0"
                 >
-                  <span className="font-mono">{item.skuCode}</span>
-                  <span className="text-gray-500">+{item.qty}</span>
+                  <div className="flex flex-col">
+                    <span className="font-mono font-semibold">{item.skuCode}</span>
+                    {item.skuName && (
+                      <span className="text-xs text-gray-600 mt-0.5">{item.skuName}</span>
+                    )}
+                  </div>
+                  <span className="text-gray-500 font-semibold">+{item.qty}</span>
                 </div>
               ))}
             </div>

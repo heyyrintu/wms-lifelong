@@ -41,7 +41,7 @@ const actions = [
     colSpan: "col-span-1",
   },
   {
-    title: "Audit Log",
+    title: "Records",
     description: "View all inventory movements",
     href: "/logs",
     icon: Search,

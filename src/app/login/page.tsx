@@ -5,12 +5,16 @@ import { useRouter } from "next/navigation";
 import { account } from "@/lib/appwrite";
 import { Button } from "@/components/ui";
 import { toast } from "sonner";
-import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
+import { LogIn, Mail, Lock, Loader2, UserPlus, User } from "lucide-react";
+import { ID } from "appwrite";
 
 export default function LoginPage() {
     const router = useRouter();
+    const [mode, setMode] = useState<"signin" | "signup">("signin");
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -34,6 +38,50 @@ export default function LoginPage() {
         }
     };
 
+    const handleSignup = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!name || !email || !password || !confirmPassword) {
+            toast.error("Please fill in all fields");
+            return;
+        }
+
+        if (password.length < 8) {
+            toast.error("Password must be at least 8 characters");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            toast.error("Passwords do not match");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // Create account
+            await account.create(ID.unique(), email, password, name);
+            
+            // Auto login after signup
+            await account.createEmailPasswordSession(email, password);
+            
+            toast.success("Account created successfully!");
+            router.push("/");
+        } catch (error) {
+            console.error("Signup error:", error);
+            toast.error(error instanceof Error ? error.message : "Signup failed");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const toggleMode = () => {
+        setMode(mode === "signin" ? "signup" : "signin");
+        setName("");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+    };
+
     return (
         <div className="min-h-screen flex flex-col lg:flex-row">
             {/* Left Side - Branding (Hidden on mobile) */}
@@ -55,10 +103,13 @@ export default function LoginPage() {
                     </div>
 
                     <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-                        Welcome Back
+                        {mode === "signin" ? "Welcome Back" : "Get Started"}
                     </h1>
                     <p className="text-xl text-white/80">
-                        Sign in to manage your warehouse inventory
+                        {mode === "signin" 
+                            ? "Sign in to manage your warehouse inventory"
+                            : "Create an account to start managing inventory"
+                        }
                     </p>
                 </div>
 
@@ -79,7 +130,7 @@ export default function LoginPage() {
                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                             ✓
                         </div>
-                        <span>Comprehensive audit logs</span>
+                        <span>Comprehensive records</span>
                     </div>
                 </div>
             </div>
@@ -98,7 +149,7 @@ export default function LoginPage() {
                         </div>
                         <h1 className="text-2xl font-bold text-slate-800">WH Mapping</h1>
                         <p className="text-slate-600 text-center mt-2">
-                            Sign in to your account
+                            {mode === "signin" ? "Sign in to your account" : "Create your account"}
                         </p>
                     </div>
 
@@ -106,14 +157,40 @@ export default function LoginPage() {
                     <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10">
                         <div className="hidden lg:block mb-8">
                             <h2 className="text-3xl font-bold text-slate-800 mb-2">
-                                Sign In
+                                {mode === "signin" ? "Sign In" : "Sign Up"}
                             </h2>
                             <p className="text-slate-600">
-                                Enter your credentials to access your account
+                                {mode === "signin"
+                                    ? "Enter your credentials to access your account"
+                                    : "Fill in your details to create an account"
+                                }
                             </p>
                         </div>
 
-                        <form onSubmit={handleLogin} className="space-y-6">
+                        <form onSubmit={mode === "signin" ? handleLogin : handleSignup} className="space-y-6">
+                            {/* Name Field (Sign Up only) */}
+                            {mode === "signup" && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                        Full Name
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <User className="h-5 w-5 text-slate-400" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            placeholder="John Doe"
+                                            className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                            disabled={isLoading}
+                                            autoComplete="name"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Email Field */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -151,10 +228,38 @@ export default function LoginPage() {
                                         placeholder="••••••••"
                                         className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                                         disabled={isLoading}
-                                        autoComplete="current-password"
+                                        autoComplete={mode === "signin" ? "current-password" : "new-password"}
                                     />
                                 </div>
+                                {mode === "signup" && (
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        Must be at least 8 characters
+                                    </p>
+                                )}
                             </div>
+
+                            {/* Confirm Password Field (Sign Up only) */}
+                            {mode === "signup" && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                        Confirm Password
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <Lock className="h-5 w-5 text-slate-400" />
+                                        </div>
+                                        <input
+                                            type="password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                            disabled={isLoading}
+                                            autoComplete="new-password"
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Submit Button */}
                             <Button
@@ -166,19 +271,43 @@ export default function LoginPage() {
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                        Signing in...
+                                        {mode === "signin" ? "Signing in..." : "Creating account..."}
                                     </>
                                 ) : (
                                     <>
-                                        <LogIn className="w-5 h-5 mr-2" />
-                                        Sign In
+                                        {mode === "signin" ? (
+                                            <>
+                                                <LogIn className="w-5 h-5 mr-2" />
+                                                Sign In
+                                            </>
+                                        ) : (
+                                            <>
+                                                <UserPlus className="w-5 h-5 mr-2" />
+                                                Sign Up
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </Button>
                         </form>
 
+                        {/* Toggle between Sign In and Sign Up */}
+                        <div className="mt-6 text-center">
+                            <button
+                                type="button"
+                                onClick={toggleMode}
+                                disabled={isLoading}
+                                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:opacity-50"
+                            >
+                                {mode === "signin" 
+                                    ? "Don't have an account? Sign up"
+                                    : "Already have an account? Sign in"
+                                }
+                            </button>
+                        </div>
+
                         {/* Footer */}
-                        <div className="mt-6 text-center text-sm text-slate-600">
+                        <div className="mt-4 text-center text-sm text-slate-600">
                             <p>Need help? Contact your administrator</p>
                         </div>
                     </div>
@@ -201,7 +330,7 @@ export default function LoginPage() {
                             <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
                                 ✓
                             </div>
-                            <span>Comprehensive audit logs</span>
+                            <span>Comprehensive records</span>
                         </div>
                     </div>
                 </div>
