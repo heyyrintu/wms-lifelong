@@ -54,11 +54,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         try {
-            await account.deleteSession("current");
-            setUser(null);
-            router.push("/login");
+            // Only attempt to delete session if user is logged in
+            if (user) {
+                await account.deleteSession("current");
+            }
         } catch (error) {
             console.error("Logout error:", error);
+            // Continue with logout even if session deletion fails
+        } finally {
+            // Always clear local state and redirect
+            setUser(null);
+            router.push("/login");
         }
     };
 

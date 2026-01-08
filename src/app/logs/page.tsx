@@ -21,8 +21,12 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Edit,
+  X,
 } from "lucide-react";
 import type { MovementRecord } from "@/lib/validators";
+import { adjustInventory } from "@/actions/adjust";
+import { useAuth } from "@/contexts/auth-context";
 
 interface LogsResponse {
   data: MovementRecord[];
@@ -47,12 +51,17 @@ const actionColors = {
 };
 
 export default function LogsPage() {
+  const { user } = useAuth();
   const [filters, setFilters] = useState({
     action: "",
     sku: "",
     location: "",
   });
   const [page, setPage] = useState(0);
+  const [editingLog, setEditingLog] = useState<MovementRecord | null>(null);
+  const [adjustQty, setAdjustQty] = useState<number>(0);
+  const [adjustNote, setAdjustNote] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const limit = 20;
 
   const queryParams = useMemo(() => {
@@ -85,6 +94,45 @@ export default function LogsPage() {
   };
 
   const totalPages = data ? Math.ceil(data.pagination.total / limit) : 0;
+
+  const handleEdit = (log: MovementRecord) => {
+    setEditingLog(log);
+    setAdjustQty(0);
+    setAdjustNote("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingLog(null);
+    setAdjustQty(0);
+    setAdjustNote("");
+  };
+
+  const handleSubmitEdit = async () => {
+    if (!editingLog || !adjustNote.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      const result = await adjustInventory({
+        locationCode: editingLog.toLocationCode || "",
+        skuCode: editingLog.skuCode,
+        qty: adjustQty,
+        user: user?.name || user?.email || "system",
+        note: adjustNote,
+      });
+
+      if (result.success) {
+        handleCancelEdit();
+        refetch();
+      } else {
+        alert(result.error || "Failed to adjust quantity");
+      }
+    } catch (error) {
+      console.error("Edit error:", error);
+      alert("Failed to adjust quantity");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <PageLayout
@@ -194,6 +242,7 @@ export default function LogsPage() {
                     <th className="px-4 py-3 text-right">Qty</th>
                     <th className="px-4 py-3">User</th>
                     <th className="px-4 py-3">Note</th>
+                    <th className="px-4 py-3 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -247,11 +296,32 @@ export default function LogsPage() {
                             {log.qty}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">
-                          {log.user}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
+                              {log.user
+                                ? log.user.charAt(0).toUpperCase()
+                                : "?"}
+                            </div>
+                            <span className="text-sm text-gray-700 font-medium">
+                              {log.user || "Unknown"}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">
                           {log.note ?? "-"}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {log.toLocationCode && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEdit(log)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -261,6 +331,96 @@ export default function LogsPage() {
             </div>
           )}
         </Card>
+      )}
+
+      {/* Edit Modal */}
+      {editingLog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Adjust Quantity</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancelEdit}
+                className="h-8 w-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  EN Code
+                </label>
+                <div className="px-3 py-2 bg-gray-50 rounded-lg font-mono text-sm">
+                  {editingLog.skuCode}
+                  {editingLog.skuName && (
+                    <span className="text-xs text-gray-500 block">{editingLog.skuName}</span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location
+                </label>
+                <div className="px-3 py-2 bg-gray-50 rounded-lg font-mono text-sm">
+                  {editingLog.toLocationCode}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Adjustment (+/-)
+                </label>
+                <input
+                  type="number"
+                  value={adjustQty}
+                  onChange={(e) => setAdjustQty(parseInt(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter +/- quantity"
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Positive numbers add, negative numbers subtract
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason for Adjustment *
+                </label>
+                <textarea
+                  value={adjustNote}
+                  onChange={(e) => setAdjustNote(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Why are you adjusting this quantity?"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="secondary"
+                  onClick={handleCancelEdit}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitEdit}
+                  disabled={!adjustNote.trim() || adjustQty === 0 || isSubmitting}
+                  className="flex-1"
+                >
+                  {isSubmitting ? "Adjusting..." : "Adjust Quantity"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
       )}
     </PageLayout>
   );

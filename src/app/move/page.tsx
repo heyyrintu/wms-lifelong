@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
 import { toast } from "sonner";
 import { PageLayout } from "@/components/layout";
 import { ScannerField } from "@/components/scanner";
@@ -20,6 +20,7 @@ import {
   MapPin,
   Package,
 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 type MoveStep = "from" | "sku" | "qty" | "to" | "complete";
 
@@ -33,6 +34,7 @@ interface MoveState {
 }
 
 export default function MovePage() {
+  const { user } = useAuth();
   const [step, setStep] = useState<MoveStep>("from");
   const [state, setState] = useState<MoveState>({
     fromLocation: "",
@@ -46,6 +48,7 @@ export default function MovePage() {
   const [error, setError] = useState<string | null>(null);
 
   const qtyInputRef = useRef<HTMLInputElement>(null);
+  const skuInputRef = useRef<{ focus: () => void } | null>(null);
 
   // Step 1: From location
   const handleFromLocationSubmit = useCallback((code: string) => {
@@ -131,7 +134,7 @@ export default function MovePage() {
           toLocationCode: code.trim().toUpperCase(),
           skuCode: state.skuCode,
           qty: state.moveQty,
-          user: "system",
+          user: user?.name || user?.email || "system",
         });
 
         if (!result.success) {
@@ -177,6 +180,11 @@ export default function MovePage() {
     }));
     setStep("sku");
     setError(null);
+    
+    // Auto-focus SKU field
+    setTimeout(() => {
+      skuInputRef.current?.focus();
+    }, 100);
   }, []);
 
   return (
@@ -256,6 +264,7 @@ export default function MovePage() {
             className="mb-4"
           />
           <ScannerFieldWithState
+            ref={skuInputRef}
             label="EN Code"
             onSubmit={handleSkuSubmit}
             placeholder="Scan EN to move"
@@ -422,20 +431,28 @@ export default function MovePage() {
 }
 
 // Helper component that manages its own state
-function ScannerFieldWithState({
-  label,
-  onSubmit,
-  placeholder,
-  autoFocus,
-  disabled,
-}: {
-  label: string;
-  onSubmit: (value: string) => void;
-  placeholder?: string;
-  autoFocus?: boolean;
-  disabled?: boolean;
-}) {
+const ScannerFieldWithState = forwardRef<
+  { focus: () => void },
+  {
+    label: string;
+    onSubmit: (value: string) => void;
+    placeholder?: string;
+    autoFocus?: boolean;
+    disabled?: boolean;
+  }
+>(function ScannerFieldWithState(
+  { label, onSubmit, placeholder, autoFocus, disabled },
+  ref
+) {
   const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Expose focus method to parent
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+  }));
 
   const handleSubmit = useCallback(() => {
     if (value.trim()) {
@@ -446,6 +463,7 @@ function ScannerFieldWithState({
   return (
     <>
       <ScannerField
+        ref={inputRef}
         label={label}
         value={value}
         onChange={setValue}
@@ -466,4 +484,4 @@ function ScannerFieldWithState({
       </div>
     </>
   );
-}
+});

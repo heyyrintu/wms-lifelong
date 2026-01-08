@@ -14,6 +14,7 @@ import {
 } from "@/components/ui";
 import { putaway } from "@/actions";
 import { Plus, Trash2, Check, RotateCcw } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 type FormStep = "location" | "items" | "complete";
 
@@ -23,11 +24,12 @@ interface PutawayItem {
 }
 
 export default function PutawayPage() {
+  const { user } = useAuth();
   const [step, setStep] = useState<FormStep>("location");
   const [locationCode, setLocationCode] = useState("");
   const [items, setItems] = useState<PutawayItem[]>([]);
   const [currentSku, setCurrentSku] = useState("");
-  const [currentQty, setCurrentQty] = useState<string>("1");
+  const [currentQty, setCurrentQty] = useState<string>("0");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<{
     locationCode: string;
@@ -35,6 +37,7 @@ export default function PutawayPage() {
   } | null>(null);
 
   const qtyInputRef = useRef<HTMLInputElement>(null);
+  const skuInputRef = useRef<HTMLInputElement>(null);
 
   // Step 1: Location scan
   const handleLocationSubmit = useCallback(() => {
@@ -81,7 +84,12 @@ export default function PutawayPage() {
     }
 
     setCurrentSku("");
-    setCurrentQty("1");
+    setCurrentQty("0");
+    
+    // Auto-focus back to SKU field for next item
+    setTimeout(() => {
+      skuInputRef.current?.focus();
+    }, 100);
   }, [currentSku, currentQty, items]);
 
   // Remove item
@@ -101,7 +109,7 @@ export default function PutawayPage() {
       const result = await putaway({
         locationCode: locationCode.toUpperCase(),
         items,
-        user: "system",
+        user: user?.name || user?.email || "system",
       });
 
       if (result.success) {
@@ -124,7 +132,7 @@ export default function PutawayPage() {
     setLocationCode("");
     setItems([]);
     setCurrentSku("");
-    setCurrentQty("1");
+    setCurrentQty("0");
     setLastResult(null);
   }, []);
 
@@ -133,7 +141,7 @@ export default function PutawayPage() {
     setStep("items");
     setItems([]);
     setCurrentSku("");
-    setCurrentQty("1");
+    setCurrentQty("0");
   }, []);
 
   // Handle qty input keydown
@@ -218,6 +226,7 @@ export default function PutawayPage() {
 
             <div className="space-y-4">
               <ScannerField
+                ref={skuInputRef}
                 label="EN Code"
                 value={currentSku}
                 onChange={setCurrentSku}

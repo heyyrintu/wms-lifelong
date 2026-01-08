@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import { ScannerInput, Button } from "@/components/ui";
 import { CameraScanner } from "./camera-scanner";
 import { Camera } from "lucide-react";
@@ -24,7 +24,7 @@ interface ScannerFieldProps {
  * - Manual text entry
  * - Optional camera scanning
  */
-export function ScannerField({
+export const ScannerField = forwardRef<HTMLInputElement, ScannerFieldProps>(function ScannerField({
   label,
   value,
   onChange,
@@ -35,9 +35,12 @@ export function ScannerField({
   disabled = false,
   autoFocus = false,
   showCamera = true,
-}: ScannerFieldProps) {
+}, ref) {
   const [showCameraScanner, setShowCameraScanner] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Expose focus method to parent
+  useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
 
   // Auto-focus on mount if specified
   useEffect(() => {
@@ -130,4 +133,4 @@ export function ScannerField({
       )}
     </>
   );
-}
+});
