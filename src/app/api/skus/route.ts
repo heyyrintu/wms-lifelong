@@ -14,12 +14,12 @@ export async function GET(request: Request) {
 
     const where = search
       ? {
-          OR: [
-            { code: { contains: search, mode: "insensitive" as const } },
-            { barcode: { contains: search, mode: "insensitive" as const } },
-            { name: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
+        OR: [
+          { code: { contains: search, mode: "insensitive" as const } },
+          { barcode: { contains: search, mode: "insensitive" as const } },
+          { name: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
       : {};
 
     const skus = await prisma.sku.findMany({
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Get SKUs error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch SKUs" },
+      { error: "Failed to fetch ENs" },
       { status: 500 }
     );
   }

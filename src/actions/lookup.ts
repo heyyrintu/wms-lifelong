@@ -75,7 +75,7 @@ export async function lookupBySku(
     if (!validated.success) {
       return {
         success: false,
-        error: validated.error.errors[0]?.message ?? "Invalid SKU code",
+        error: validated.error.errors[0]?.message ?? "Invalid EN code",
       };
     }
 
@@ -93,7 +93,7 @@ export async function lookupBySku(
     if (!sku) {
       return {
         success: false,
-        error: `SKU "${validated.data.skuCode}" not found`,
+        error: `EN "${validated.data.skuCode}" not found`,
       };
     }
 
@@ -117,7 +117,7 @@ export async function lookupBySku(
     console.error("Lookup by SKU error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to lookup SKU",
+      error: error instanceof Error ? error.message : "Failed to lookup EN",
     };
   }
 }

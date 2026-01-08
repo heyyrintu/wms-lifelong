@@ -61,7 +61,7 @@ export async function moveInventory(
       });
 
       if (!sku) {
-        throw new Error(`SKU "${skuCode}" not found`);
+        throw new Error(`EN "${skuCode}" not found`);
       }
 
       // Get source inventory with lock
@@ -76,7 +76,7 @@ export async function moveInventory(
 
       if (!sourceInventory) {
         throw new Error(
-          `SKU "${skuCode}" not found at location "${fromLocationCode}"`
+          `EN "${skuCode}" not found at location "${fromLocationCode}"`
         );
       }
 
