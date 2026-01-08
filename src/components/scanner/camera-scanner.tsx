@@ -45,6 +45,16 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
         setIsStarting(true);
         setError(null);
 
+        // Check if we're in a secure context (HTTPS or localhost)
+        if (!window.isSecureContext) {
+          throw new Error("Camera requires HTTPS. Please use a secure connection.");
+        }
+
+        // Check if mediaDevices API is available
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Camera API not supported. If using a hardware scanner, just focus the input field and scan.");
+        }
+
         const hints = new Map();
         hints.set(DecodeHintType.POSSIBLE_FORMATS, [
           BarcodeFormat.CODE_128,
@@ -60,17 +70,24 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
         const reader = new BrowserMultiFormatReader(hints);
         readerRef.current = reader;
 
-        // Explicitly request notification/permission for camera to ensure we get labels
+        // Explicitly request camera permission
         let permissionStream: MediaStream | null = null;
         try {
           permissionStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: "environment" },
           });
-        } catch (err) {
-          console.warn("Could not get initial camera permission:", err);
-          // Continue anyway, maybe permission was already granted or we can try default
+        } catch (permErr) {
+          const permError = permErr as Error;
+          if (permError.name === "NotAllowedError" || permError.name === "PermissionDeniedError") {
+            throw new Error("Camera access denied. Please allow camera permission in browser settings.");
+          } else if (permError.name === "NotFoundError" || permError.name === "DevicesNotFoundError") {
+            throw new Error("No camera found. If using a hardware scanner, focus the input field and scan.");
+          } else if (permError.name === "NotReadableError" || permError.name === "TrackStartError") {
+            throw new Error("Camera is in use by another app. Close other apps using the camera.");
+          }
+          // Continue for other errors, maybe we can still list devices
+          console.warn("Camera permission issue:", permErr);
         } finally {
-          // Stop the permission stream immediately as the reader will start its own
           if (permissionStream) {
             permissionStream.getTracks().forEach((track) => track.stop());
           }
@@ -185,8 +202,12 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
         {error && (
           <div className="text-center">
             <p className="text-red-400 mb-3">{error}</p>
+            <p className="text-gray-400 text-sm mb-4">
+              💡 Tip: If you have a hardware scanner (Newland, Zebra, etc.),
+              just close this and tap the input field, then use your device&apos;s scan button.
+            </p>
             <Button variant="secondary" onClick={handleClose}>
-              Close
+              Close & Use Hardware Scanner
             </Button>
           </div>
         )}
