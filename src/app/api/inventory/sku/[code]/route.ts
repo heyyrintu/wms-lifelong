@@ -10,10 +10,11 @@ interface RouteParams {
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
     const { code } = await params;
-    const skuCode = code.toUpperCase();
+    const searchCode = code.toUpperCase();
 
-    const sku = await prisma.sku.findUnique({
-      where: { code: skuCode },
+    // Search by EAN code first, then by itemCode
+    let sku = await prisma.sku.findUnique({
+      where: { code: searchCode },
       include: {
         inventory: {
           where: { qty: { gt: 0 } },
@@ -23,9 +24,23 @@ export async function GET(_request: Request, { params }: RouteParams) {
       },
     });
 
+    // If not found by EAN code, try searching by itemCode
+    if (!sku) {
+      sku = await prisma.sku.findFirst({
+        where: { itemCode: { equals: searchCode, mode: "insensitive" } },
+        include: {
+          inventory: {
+            where: { qty: { gt: 0 } },
+            include: { location: true },
+            orderBy: { location: { code: "asc" } },
+          },
+        },
+      });
+    }
+
     if (!sku) {
       return NextResponse.json(
-        { error: `EN "${skuCode}" not found` },
+        { error: `EN "${searchCode}" not found` },
         { status: 404 }
       );
     }
@@ -34,6 +49,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
       data: {
         id: sku.id,
         code: sku.code,
+        itemCode: sku.itemCode,
         name: sku.name,
         barcode: sku.barcode,
         locations: sku.inventory.map((inv) => ({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { PageLayout } from "@/components/layout";
 import { ScannerField } from "@/components/scanner";
@@ -13,7 +13,7 @@ import {
   Badge,
 } from "@/components/ui";
 import { putaway } from "@/actions";
-import { Trash2, Check, RotateCcw, Edit, X } from "lucide-react";
+import { Trash2, Check, RotateCcw, Edit, X, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
 type FormStep = "location" | "items" | "complete";
@@ -22,6 +22,12 @@ interface PutawayItem {
   skuCode: string;
   itemCode?: string;
   qty: number;
+}
+
+interface SkuLookupResult {
+  code: string;
+  itemCode: string | null;
+  name: string | null;
 }
 
 export default function PutawayPage() {
@@ -39,10 +45,78 @@ export default function PutawayPage() {
     locationCode: string;
     items: Array<{ skuCode: string; skuName: string | null; qty: number }>;
   } | null>(null);
+  
+  // SKU lookup state
+  const [skuLookup, setSkuLookup] = useState<SkuLookupResult | null>(null);
+  const [isLookingUp, setIsLookingUp] = useState(false);
 
   const qtyInputRef = useRef<HTMLInputElement>(null);
   const skuInputRef = useRef<HTMLInputElement>(null);
   const locationInputRef = useRef<HTMLInputElement>(null);
+
+  // Lookup SKU when EAN changes
+  useEffect(() => {
+    const lookupSku = async () => {
+      if (!currentSku.trim() || currentSku.length < 3) {
+        setSkuLookup(null);
+        return;
+      }
+
+      setIsLookingUp(true);
+      try {
+        const res = await fetch(`/api/inventory/sku/${encodeURIComponent(currentSku.toUpperCase())}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSkuLookup({
+            code: data.data.code,
+            itemCode: data.data.itemCode || null,
+            name: data.data.name || null,
+          });
+        } else {
+          setSkuLookup(null);
+        }
+      } catch {
+        setSkuLookup(null);
+      } finally {
+        setIsLookingUp(false);
+      }
+    };
+
+    const debounce = setTimeout(lookupSku, 300);
+    return () => clearTimeout(debounce);
+  }, [currentSku]);
+
+  // Lookup by Item Code when it changes
+  useEffect(() => {
+    const lookupByItemCode = async () => {
+      // Only lookup if we have itemCode and no EAN entered
+      if (!currentItemCode.trim() || currentItemCode.length < 2 || currentSku.trim()) {
+        return;
+      }
+
+      setIsLookingUp(true);
+      try {
+        const res = await fetch(`/api/inventory/sku/${encodeURIComponent(currentItemCode.toUpperCase())}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSkuLookup({
+            code: data.data.code,
+            itemCode: data.data.itemCode || null,
+            name: data.data.name || null,
+          });
+        } else {
+          setSkuLookup(null);
+        }
+      } catch {
+        setSkuLookup(null);
+      } finally {
+        setIsLookingUp(false);
+      }
+    };
+
+    const debounce = setTimeout(lookupByItemCode, 300);
+    return () => clearTimeout(debounce);
+  }, [currentItemCode, currentSku]);
 
   // Step 1: Location scan - auto advance to items step
   const handleLocationSubmit = useCallback(() => {
@@ -107,6 +181,7 @@ export default function PutawayPage() {
     setCurrentSku("");
     setCurrentItemCode("");
     setCurrentQty("0");
+    setSkuLookup(null);
     
     // Auto-focus back to SKU field for next item
     setTimeout(() => {
@@ -288,15 +363,43 @@ export default function PutawayPage() {
             />
 
             <div className="space-y-4">
-              <ScannerField
-                ref={skuInputRef}
-                label="EAN Code"
-                value={currentSku}
-                onChange={setCurrentSku}
-                onSubmit={handleSkuSubmit}
-                placeholder="Scan or enter EAN"
-                autoFocus
-              />
+              <div>
+                <ScannerField
+                  ref={skuInputRef}
+                  label="EAN Code"
+                  value={currentSku}
+                  onChange={setCurrentSku}
+                  onSubmit={handleSkuSubmit}
+                  placeholder="Scan or enter EAN"
+                  autoFocus
+                />
+                {/* Show SKU lookup result */}
+                {isLookingUp && (
+                  <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Looking up...</span>
+                  </div>
+                )}
+                {!isLookingUp && skuLookup && (
+                  <div className="mt-1 p-2 bg-green-50 border border-green-200 rounded-md">
+                    <div className="text-sm">
+                      {skuLookup.itemCode && (
+                        <p className="text-green-800">
+                          <span className="font-medium">SKU Code:</span> {skuLookup.itemCode}
+                        </p>
+                      )}
+                      {skuLookup.name && (
+                        <p className="text-green-700">
+                          <span className="font-medium">Name:</span> {skuLookup.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {!isLookingUp && currentSku.trim().length >= 3 && !skuLookup && (
+                  <p className="mt-1 text-xs text-amber-600">EAN not found in database - will be created on submit</p>
+                )}
+              </div>
 
               <div>
                 <ScannerInput
@@ -306,6 +409,21 @@ export default function PutawayPage() {
                   placeholder="Enter Item/SKU Code if EAN not available"
                   className="normal-case!"
                 />
+                {/* Show EAN lookup result when searching by Item Code */}
+                {!currentSku.trim() && !isLookingUp && skuLookup && currentItemCode.trim() && (
+                  <div className="mt-1 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="text-sm">
+                      <p className="text-blue-800">
+                        <span className="font-medium">EAN Code:</span> {skuLookup.code}
+                      </p>
+                      {skuLookup.name && (
+                        <p className="text-blue-700">
+                          <span className="font-medium">Name:</span> {skuLookup.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Quantity field with Add button */}

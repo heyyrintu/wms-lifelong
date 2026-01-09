@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { Navigation } from "./navigation";
+import { HandlerNameFAB } from "./handler-name-fab";
 import { cn } from "@/lib/utils";
 
 interface PageLayoutProps {
@@ -51,6 +52,7 @@ export function PageLayout({
           {children}
         </main>
       </div>
+      <HandlerNameFAB />
     </div>
   );
 }
