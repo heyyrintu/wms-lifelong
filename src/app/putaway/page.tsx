@@ -31,7 +31,7 @@ export default function PutawayPage() {
   const [items, setItems] = useState<PutawayItem[]>([]);
   const [currentSku, setCurrentSku] = useState("");
   const [currentItemCode, setCurrentItemCode] = useState("");
-  const [currentQty, setCurrentQty] = useState<string>("1");
+  const [currentQty, setCurrentQty] = useState<string>("0");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editQty, setEditQty] = useState<string>("0");
@@ -106,7 +106,7 @@ export default function PutawayPage() {
 
     setCurrentSku("");
     setCurrentItemCode("");
-    setCurrentQty("1");
+    setCurrentQty("0");
     
     // Auto-focus back to SKU field for next item
     setTimeout(() => {
@@ -203,7 +203,7 @@ export default function PutawayPage() {
     setStep("items");
     setItems([]);
     setCurrentSku("");
-    setCurrentQty("1");
+    setCurrentQty("0");
   }, []);
 
   // Handle qty input keydown
@@ -308,19 +308,28 @@ export default function PutawayPage() {
                 />
               </div>
 
-              {/* Quantity field - visible when SKU is scanned */}
+              {/* Quantity field with Add button */}
               <div>
-                <ScannerInput
-                  ref={qtyInputRef}
-                  label="Quantity"
-                  type="number"
-                  value={currentQty}
-                  onChange={(e) => setCurrentQty(e.target.value)}
-                  onKeyDown={handleQtyKeyDown}
-                  min={1}
-                  className="normal-case!"
-                />
-                <p className="text-xs text-gray-500 mt-1">Press Enter after entering quantity to add item</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                <div className="flex gap-2">
+                  <ScannerInput
+                    ref={qtyInputRef}
+                    type="number"
+                    value={currentQty}
+                    onChange={(e) => setCurrentQty(e.target.value)}
+                    onKeyDown={handleQtyKeyDown}
+                    min={0}
+                    className="normal-case! flex-1"
+                  />
+                  <Button
+                    onClick={handleAddItem}
+                    disabled={!currentSku.trim() || parseInt(currentQty, 10) <= 0}
+                    size="lg"
+                  >
+                    Add
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Press Enter or click Add to add item</p>
               </div>
             </div>
           </Card>

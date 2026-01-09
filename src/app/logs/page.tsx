@@ -76,8 +76,12 @@ export default function LogsPage() {
     if (filters.action) params.set("action", filters.action);
     if (filters.sku) params.set("sku", filters.sku.toUpperCase());
     if (filters.location) params.set("location", filters.location.toUpperCase());
+    // Non-admin users can only see their own entries
+    if (!isAdmin && user) {
+      params.set("user", user.name || user.email);
+    }
     return params.toString();
-  }, [filters, page]);
+  }, [filters, page, isAdmin, user]);
 
   const { data, isLoading, refetch } = useQuery<LogsResponse>({
     queryKey: ["movement-logs", queryParams],
@@ -243,7 +247,7 @@ export default function LogsPage() {
   return (
     <PageLayout
       title="Records"
-      description="View all inventory movements"
+      description={isAdmin ? "View all inventory movements (Admin)" : `Showing your entries only`}
       maxWidth="xl"
     >
       {/* Filters */}

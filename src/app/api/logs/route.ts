@@ -15,11 +15,13 @@ export async function GET(request: Request) {
     const action = searchParams.get("action");
     const skuCode = searchParams.get("sku");
     const locationCode = searchParams.get("location");
+    const userFilter = searchParams.get("user"); // Filter by user (for non-admin users)
 
     // Build where clause
     const where: {
       action?: "PUTAWAY" | "MOVE" | "ADJUST";
       sku?: { code: { contains: string; mode: "insensitive" } };
+      user?: string;
       OR?: Array<{
         fromLocation?: { code: { contains: string; mode: "insensitive" } };
         toLocation?: { code: { contains: string; mode: "insensitive" } };
@@ -32,6 +34,11 @@ export async function GET(request: Request) {
 
     if (skuCode) {
       where.sku = { code: { contains: skuCode.toUpperCase(), mode: "insensitive" } };
+    }
+
+    // Filter by user if provided (non-admin users)
+    if (userFilter) {
+      where.user = userFilter;
     }
 
     if (locationCode) {
