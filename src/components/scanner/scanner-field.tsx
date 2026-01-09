@@ -56,11 +56,16 @@ export const ScannerField = forwardRef<HTMLInputElement, ScannerFieldProps>(func
         // Read directly from input to handle fast barcode scanner input
         const currentValue = inputRef.current?.value || "";
         if (currentValue.trim()) {
-          onSubmit();
+          // Ensure state is updated before calling onSubmit
+          onChange(currentValue.toUpperCase());
+          // Use requestAnimationFrame to ensure state update is processed
+          requestAnimationFrame(() => {
+            onSubmit();
+          });
         }
       }
     },
-    [onSubmit]
+    [onChange, onSubmit]
   );
 
   const handleChange = useCallback(

@@ -57,54 +57,19 @@ export default function PutawayPage() {
     }
   }, [locationCode]);
 
-  // Step 2: Add SKU - auto add item with default quantity of 1
+  // Step 2: SKU scanned - auto focus quantity field
   const handleSkuSubmit = useCallback(() => {
     const skuValue = skuInputRef.current?.value || currentSku;
     if (skuValue.trim()) {
-      const qty = parseInt(currentQty, 10);
-      const finalQty = isNaN(qty) || qty <= 0 ? 1 : qty;
-      
-      // Check if SKU already exists in list
-      const existingIndex = items.findIndex(
-        (item) => item.skuCode === skuValue.toUpperCase()
-      );
-
-      if (existingIndex >= 0) {
-        // Update existing item
-        const updatedItems = [...items];
-        const existingItem = updatedItems[existingIndex];
-        if (existingItem) {
-          updatedItems[existingIndex] = {
-            skuCode: existingItem.skuCode,
-            itemCode: existingItem.itemCode,
-            qty: existingItem.qty + finalQty,
-          };
-          setItems(updatedItems);
-          toast.success(`Updated ${skuValue} qty to ${updatedItems[existingIndex].qty}`);
-        }
-      } else {
-        // Add new item
-        setItems([
-          ...items,
-          {
-            skuCode: skuValue.toUpperCase(),
-            itemCode: currentItemCode || undefined,
-            qty: finalQty,
-          },
-        ]);
-        toast.success(`Added ${skuValue} x${finalQty}`);
-      }
-
-      // Reset for next scan
-      setCurrentSku("");
-      setCurrentItemCode("");
-      setCurrentQty("1");
-      // Focus back on SKU input for next scan
+      // Update state with scanned value
+      setCurrentSku(skuValue.toUpperCase());
+      // Focus on quantity input
       setTimeout(() => {
-        skuInputRef.current?.focus();
+        qtyInputRef.current?.focus();
+        qtyInputRef.current?.select();
       }, 50);
     }
-  }, [currentSku, currentQty, currentItemCode, items]);
+  }, [currentSku]);
 
   // Add item to list
   const handleAddItem = useCallback(() => {
@@ -141,7 +106,7 @@ export default function PutawayPage() {
 
     setCurrentSku("");
     setCurrentItemCode("");
-    setCurrentQty("0");
+    setCurrentQty("1");
     
     // Auto-focus back to SKU field for next item
     setTimeout(() => {
@@ -319,7 +284,7 @@ export default function PutawayPage() {
           <Card>
             <CardHeader
               title="Step 2: Scan ENs"
-              description="Scan EAN barcode - items are added automatically with qty 1"
+              description="Scan EAN → Enter Qty → Press Enter to add"
             />
 
             <div className="space-y-4">
@@ -343,27 +308,20 @@ export default function PutawayPage() {
                 />
               </div>
 
-              {/* Show quantity field but make it optional - hidden by default */}
-              <details className="group">
-                <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800 flex items-center gap-2">
-                  <span>Adjust quantity (default: 1)</span>
-                  <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </summary>
-                <div className="mt-2">
-                  <ScannerInput
-                    ref={qtyInputRef}
-                    label="Quantity"
-                    type="number"
-                    value={currentQty}
-                    onChange={(e) => setCurrentQty(e.target.value)}
-                    onKeyDown={handleQtyKeyDown}
-                    min={1}
-                    className="normal-case!"
-                  />
-                </div>
-              </details>
+              {/* Quantity field - visible when SKU is scanned */}
+              <div>
+                <ScannerInput
+                  ref={qtyInputRef}
+                  label="Quantity"
+                  type="number"
+                  value={currentQty}
+                  onChange={(e) => setCurrentQty(e.target.value)}
+                  onKeyDown={handleQtyKeyDown}
+                  min={1}
+                  className="normal-case!"
+                />
+                <p className="text-xs text-gray-500 mt-1">Press Enter after entering quantity to add item</p>
+              </div>
             </div>
           </Card>
 
