@@ -44,6 +44,7 @@ export const putawaySchema = z.object({
     .array(putawayItemSchema)
     .min(1, "At least one item is required"),
   user: z.string().min(1).default("system"),
+  handlerName: z.string().optional(),
   note: z.string().optional(),
 });
 
@@ -60,6 +61,7 @@ export const moveInventorySchema = z.object({
   skuCode: skuCodeSchema,
   qty: quantitySchema,
   user: z.string().min(1).default("system"),
+  handlerName: z.string().optional(),
   note: z.string().optional(),
 }).refine(
   (data) => data.fromLocationCode !== data.toLocationCode,
@@ -95,6 +97,7 @@ export const adjustInventorySchema = z.object({
   skuCode: skuCodeSchema,
   qty: z.number().int("Quantity must be a whole number"),
   user: z.string().min(1).default("system"),
+  handlerName: z.string().optional(),
   note: z.string().min(1, "Adjustment note is required"),
 });
 
@@ -155,6 +158,7 @@ export interface MovementRecord {
   toLocationCode?: string | null;
   qty: number;
   user: string;
+  handlerName?: string | null;
   note?: string | null;
   createdAt: Date;
 }

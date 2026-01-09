@@ -56,10 +56,7 @@ export const ScannerField = forwardRef<HTMLInputElement, ScannerFieldProps>(func
         // Read directly from input to handle fast barcode scanner input
         const currentValue = inputRef.current?.value || "";
         if (currentValue.trim()) {
-          // Small delay to ensure parent state is synced
-          setTimeout(() => {
-            onSubmit();
-          }, 10);
+          onSubmit();
         }
       }
     },

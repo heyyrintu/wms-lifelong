@@ -66,6 +66,7 @@ export async function GET(request: Request) {
       toLocationCode: log.toLocation?.code ?? null,
       qty: log.qty,
       user: log.user,
+      handlerName: log.handlerName,
       note: log.note,
       createdAt: log.createdAt,
     }));

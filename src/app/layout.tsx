@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google"; // Modern font
 import { Providers } from "@/components/providers";
+import { HandlerNamePrompt } from "@/components/handler-name-prompt";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -72,7 +73,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <HandlerNamePrompt />
+          {children}
+        </Providers>
       </body>
     </html>
   );

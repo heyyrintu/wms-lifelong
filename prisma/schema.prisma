@@ -85,6 +85,7 @@ model MovementLog {
   toLocationId   String?        @map("to_location_id") @db.Uuid
   qty            Int
   user           String         @db.VarChar(100)
+  handlerName    String?        @map("handler_name") @db.VarChar(100)
   note           String?        @db.Text
   createdAt      DateTime       @default(now()) @map("created_at")
 

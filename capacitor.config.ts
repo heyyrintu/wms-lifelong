@@ -5,15 +5,17 @@ const config: CapacitorConfig = {
   appName: 'Warehouse Mapping',
   webDir: 'out',
   server: {
-    // Connect to your local dev server
-    // Replace with your computer's IP address on local network
-    url: 'http://10.5.0.2:3000',  // Use your network IP shown when running npm run dev
+    url: 'https://wmslifelong.dronalogitech.cloud',
     cleartext: true
   },
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    webContentsDebuggingEnabled: true,
+    backgroundColor: '#0f172a',
+    // Fix for Android 11+ touch/click issues
+    useLegacyBridge: false,
+    loggingBehavior: 'debug'
   },
   plugins: {
     SplashScreen: {

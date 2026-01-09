@@ -25,7 +25,7 @@ export async function adjustInventory(
       };
     }
 
-    const { locationCode, skuCode, qty, user, note } = validated.data;
+    const { locationCode, skuCode, qty, user, handlerName, note } = validated.data;
 
     const result = await prisma.$transaction(async (tx) => {
       // Get or create location
@@ -96,6 +96,7 @@ export async function adjustInventory(
           toLocationId: location.id,
           qty,
           user: user ?? "system",
+          handlerName: handlerName,
           note,
         },
       });

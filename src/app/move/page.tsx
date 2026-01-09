@@ -129,12 +129,14 @@ export default function MovePage() {
       setError(null);
 
       try {
+        const handlerName = typeof window !== 'undefined' ? localStorage.getItem('handlerName') : null;
         const result = await moveInventory({
           fromLocationCode: state.fromLocation,
           toLocationCode: code.trim().toUpperCase(),
           skuCode: state.skuCode,
           qty: state.moveQty,
           user: user?.name || user?.email || "system",
+          handlerName: handlerName || undefined,
         });
 
         if (!result.success) {

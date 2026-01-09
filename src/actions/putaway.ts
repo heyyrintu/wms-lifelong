@@ -25,7 +25,7 @@ export async function putaway(
       };
     }
 
-    const { locationCode, items, user, note } = validatedData.data;
+    const { locationCode, items, user, handlerName, note } = validatedData.data;
 
     const results = await prisma.$transaction(async (tx) => {
       // Find or create location
@@ -94,6 +94,7 @@ export async function putaway(
             toLocationId: location.id,
             qty: item.qty,
             user: user ?? "system",
+            handlerName: handlerName,
             note,
           },
         });

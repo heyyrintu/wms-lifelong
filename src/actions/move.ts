@@ -31,7 +31,7 @@ export async function moveInventory(
       };
     }
 
-    const { fromLocationCode, toLocationCode, skuCode, qty, user, note } =
+    const { fromLocationCode, toLocationCode, skuCode, qty, user, handlerName, note } =
       validatedData.data;
 
     const result = await prisma.$transaction(async (tx) => {
@@ -119,8 +119,9 @@ export async function moveInventory(
           skuId: sku.id,
           fromLocationId: fromLocation.id,
           toLocationId: toLocation.id,
-          qty,
+          qty: qty,
           user: user ?? "system",
+          handlerName: handlerName,
           note,
         },
       });

@@ -32,11 +32,23 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  
+  // Handler name states
+  const [handlerName, setHandlerName] = useState("");
+  const [isEditingHandler, setIsEditingHandler] = useState(false);
+  const [newHandlerName, setNewHandlerName] = useState("");
+  const [isUpdatingHandler, setIsUpdatingHandler] = useState(false);
 
   useEffect(() => {
     // Load settings from env variables
     setAutoCreateSKU(process.env.NEXT_PUBLIC_AUTO_CREATE_SKU === "true");
     setAutoCreateLocation(process.env.NEXT_PUBLIC_AUTO_CREATE_LOCATION === "true");
+
+    // Load handler name from localStorage
+    const storedHandlerName = localStorage.getItem("handlerName");
+    if (storedHandlerName) {
+      setHandlerName(storedHandlerName);
+    }
 
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -167,6 +179,29 @@ export default function SettingsPage() {
     }
   };
 
+  const handleUpdateHandlerName = () => {
+    if (!newHandlerName.trim()) {
+      toast.error("Handler name cannot be empty");
+      return;
+    }
+
+    setIsUpdatingHandler(true);
+    try {
+      const name = newHandlerName.trim();
+      localStorage.setItem("handlerName", name);
+      localStorage.setItem("lastHandlerPromptTime", Date.now().toString());
+      setHandlerName(name);
+      toast.success("Handler name updated successfully!");
+      setIsEditingHandler(false);
+      setNewHandlerName("");
+    } catch (error) {
+      console.error("Update handler name error:", error);
+      toast.error("Failed to update handler name");
+    } finally {
+      setIsUpdatingHandler(false);
+    }
+  };
+
   return (
     <PageLayout
       title="Settings"
@@ -243,6 +278,68 @@ export default function SettingsPage() {
             </div>
             <p className="text-base text-gray-900">{user?.email || "-"}</p>
             <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+          </div>
+
+          {/* Handler Name Section */}
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <User className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">Handler Name</span>
+                </div>
+                {!isEditingHandler ? (
+                  <div>
+                    <p className="text-base text-gray-900">{handlerName || "Not set"}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Used to track your inventory actions
+                    </p>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    value={newHandlerName}
+                    onChange={(e) => setNewHandlerName(e.target.value)}
+                    placeholder="Enter handler name"
+                    className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    autoFocus
+                  />
+                )}
+              </div>
+              {!isEditingHandler ? (
+                <Button
+                  onClick={() => {
+                    setNewHandlerName(handlerName);
+                    setIsEditingHandler(true);
+                  }}
+                  variant="secondary"
+                  size="sm"
+                >
+                  <Edit2 className="w-4 h-4 mr-1" />
+                  {handlerName ? "Edit" : "Set"}
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setIsEditingHandler(false);
+                      setNewHandlerName("");
+                    }}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleUpdateHandlerName}
+                    disabled={isUpdatingHandler}
+                    size="sm"
+                  >
+                    {isUpdatingHandler ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Password Section */}

@@ -13,7 +13,7 @@ import {
   Badge,
 } from "@/components/ui";
 import { putaway } from "@/actions";
-import { Plus, Trash2, Check, RotateCcw, Edit, X } from "lucide-react";
+import { Trash2, Check, RotateCcw, Edit, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
 type FormStep = "location" | "items" | "complete";
@@ -31,7 +31,7 @@ export default function PutawayPage() {
   const [items, setItems] = useState<PutawayItem[]>([]);
   const [currentSku, setCurrentSku] = useState("");
   const [currentItemCode, setCurrentItemCode] = useState("");
-  const [currentQty, setCurrentQty] = useState<string>("0");
+  const [currentQty, setCurrentQty] = useState<string>("1");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editQty, setEditQty] = useState<string>("0");
@@ -46,40 +46,65 @@ export default function PutawayPage() {
 
   // Step 1: Location scan - auto advance to items step
   const handleLocationSubmit = useCallback(() => {
-    // Use a small timeout to ensure state is fully updated after fast barcode scan
-    setTimeout(() => {
-      // Check the actual input value as fallback (handles race condition with barcode scanners)
-      const locationValue = locationInputRef.current?.value || locationCode;
-      if (locationValue.trim()) {
-        // Update state if needed
-        if (locationValue !== locationCode) {
-          setLocationCode(locationValue.toUpperCase());
-        }
-        setStep("items");
-        // Focus on SKU input after transition
-        setTimeout(() => {
-          skuInputRef.current?.focus();
-        }, 100);
-      }
-    }, 50);
+    const locationValue = locationInputRef.current?.value || locationCode;
+    if (locationValue.trim()) {
+      setLocationCode(locationValue.toUpperCase());
+      setStep("items");
+      // Focus on SKU input after transition
+      setTimeout(() => {
+        skuInputRef.current?.focus();
+      }, 50);
+    }
   }, [locationCode]);
 
-  // Step 2: Add SKU - auto focus quantity field
+  // Step 2: Add SKU - auto add item with default quantity of 1
   const handleSkuSubmit = useCallback(() => {
-    // Use a small timeout to ensure state is fully updated after fast barcode scan
-    setTimeout(() => {
-      // Check the actual input value as fallback (handles race condition with barcode scanners)
-      const skuValue = skuInputRef.current?.value || currentSku;
-      if (skuValue.trim()) {
-        // Update state if needed
-        if (skuValue !== currentSku) {
-          setCurrentSku(skuValue.toUpperCase());
+    const skuValue = skuInputRef.current?.value || currentSku;
+    if (skuValue.trim()) {
+      const qty = parseInt(currentQty, 10);
+      const finalQty = isNaN(qty) || qty <= 0 ? 1 : qty;
+      
+      // Check if SKU already exists in list
+      const existingIndex = items.findIndex(
+        (item) => item.skuCode === skuValue.toUpperCase()
+      );
+
+      if (existingIndex >= 0) {
+        // Update existing item
+        const updatedItems = [...items];
+        const existingItem = updatedItems[existingIndex];
+        if (existingItem) {
+          updatedItems[existingIndex] = {
+            skuCode: existingItem.skuCode,
+            itemCode: existingItem.itemCode,
+            qty: existingItem.qty + finalQty,
+          };
+          setItems(updatedItems);
+          toast.success(`Updated ${skuValue} qty to ${updatedItems[existingIndex].qty}`);
         }
-        qtyInputRef.current?.focus();
-        qtyInputRef.current?.select();
+      } else {
+        // Add new item
+        setItems([
+          ...items,
+          {
+            skuCode: skuValue.toUpperCase(),
+            itemCode: currentItemCode || undefined,
+            qty: finalQty,
+          },
+        ]);
+        toast.success(`Added ${skuValue} x${finalQty}`);
       }
-    }, 50);
-  }, [currentSku]);
+
+      // Reset for next scan
+      setCurrentSku("");
+      setCurrentItemCode("");
+      setCurrentQty("1");
+      // Focus back on SKU input for next scan
+      setTimeout(() => {
+        skuInputRef.current?.focus();
+      }, 50);
+    }
+  }, [currentSku, currentQty, currentItemCode, items]);
 
   // Add item to list
   const handleAddItem = useCallback(() => {
@@ -170,10 +195,12 @@ export default function PutawayPage() {
 
     setIsSubmitting(true);
     try {
+      const handlerName = typeof window !== 'undefined' ? localStorage.getItem('handlerName') : null;
       const result = await putaway({
         locationCode: locationCode.toUpperCase(),
         items,
         user: user?.name || user?.email || "system",
+        handlerName: handlerName || undefined,
       });
 
       if (result.success && result.data) {
@@ -211,7 +238,7 @@ export default function PutawayPage() {
     setStep("items");
     setItems([]);
     setCurrentSku("");
-    setCurrentQty("0");
+    setCurrentQty("1");
   }, []);
 
   // Handle qty input keydown
@@ -292,7 +319,7 @@ export default function PutawayPage() {
           <Card>
             <CardHeader
               title="Step 2: Scan ENs"
-              description="Scan EN, enter quantity, then add"
+              description="Scan EAN barcode - items are added automatically with qty 1"
             />
 
             <div className="space-y-4">
@@ -316,28 +343,27 @@ export default function PutawayPage() {
                 />
               </div>
 
-              <div>
-                <ScannerInput
-                  ref={qtyInputRef}
-                  label="Quantity"
-                  type="number"
-                  value={currentQty}
-                  onChange={(e) => setCurrentQty(e.target.value)}
-                  onKeyDown={handleQtyKeyDown}
-                  min={1}
-                  className="normal-case!"
-                />
-              </div>
-
-              <Button
-                onClick={handleAddItem}
-                disabled={!currentSku.trim() || !currentQty}
-                size="lg"
-                className="w-full"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Add Item
-              </Button>
+              {/* Show quantity field but make it optional - hidden by default */}
+              <details className="group">
+                <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800 flex items-center gap-2">
+                  <span>Adjust quantity (default: 1)</span>
+                  <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="mt-2">
+                  <ScannerInput
+                    ref={qtyInputRef}
+                    label="Quantity"
+                    type="number"
+                    value={currentQty}
+                    onChange={(e) => setCurrentQty(e.target.value)}
+                    onKeyDown={handleQtyKeyDown}
+                    min={1}
+                    className="normal-case!"
+                  />
+                </div>
+              </details>
             </div>
           </Card>
 

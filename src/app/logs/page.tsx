@@ -117,11 +117,13 @@ export default function LogsPage() {
 
     setIsSubmitting(true);
     try {
+      const handlerName = typeof window !== 'undefined' ? localStorage.getItem('handlerName') : null;
       const result = await adjustInventory({
         locationCode: editingLog.toLocationCode || "",
         skuCode: editingLog.skuCode,
         qty: adjustQty,
         user: user?.name || user?.email || "system",
+        handlerName: handlerName || undefined,
         note: adjustNote,
       });
 
@@ -221,6 +223,7 @@ export default function LogsPage() {
       "Location": log.toLocationCode || log.fromLocationCode || "-",
       "Quantity": log.qty,
       "User": log.user,
+      "Handler": log.handlerName || "-",
       "Action": log.action === "PUTAWAY" ? "CYCLE COUNT" : log.action,
     }));
 
@@ -386,6 +389,7 @@ export default function LogsPage() {
                     <th className="px-4 py-3">Location</th>
                     <th className="px-4 py-3 text-right">Qty</th>
                     <th className="px-4 py-3">User</th>
+                    <th className="px-4 py-3">Handler</th>
                     <th className="px-4 py-3">Note</th>
                     <th className="px-4 py-3 text-center">Actions</th>
                   </tr>
@@ -467,6 +471,9 @@ export default function LogsPage() {
                               {log.user || "Unknown"}
                             </span>
                           </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {log.handlerName || "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">
                           {log.note ?? "-"}
