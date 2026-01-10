@@ -90,13 +90,15 @@ export default function LogsPage() {
     return params.toString();
   }, [filters, page, isAdmin, user]);
 
-  const { data, isLoading, refetch } = useQuery<LogsResponse>({
+  const { data, isLoading, isFetching, refetch } = useQuery<LogsResponse>({
     queryKey: ["movement-logs", queryParams],
     queryFn: async () => {
       const res = await fetch(`/api/logs?${queryParams}`);
       if (!res.ok) throw new Error("Failed to fetch logs");
       return res.json();
     },
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Fetch stats for admin users
@@ -421,11 +423,23 @@ export default function LogsPage() {
       </Card>
 
       {/* Results */}
-      {isLoading && <PageLoader message="Loading logs..." />}
-
-      {data && (
+      {isLoading ? (
+        <PageLoader message="Loading logs..." />
+      ) : !data ? (
+        <Card>
+          <EmptyState
+            icon={<Search className="w-8 h-8" />}
+            title="No Data Available"
+            description="Unable to load records. Please try refreshing."
+          />
+        </Card>
+      ) : (
         <Card padding="none">
-          <div className="p-4 border-b border-gray-200">
+          <div className="relative">
+            {isFetching && (
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-600 to-blue-400 animate-pulse z-10"></div>
+            )}
+            <div className="p-4 border-b border-gray-200">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-sm text-gray-500">
@@ -620,10 +634,9 @@ export default function LogsPage() {
               </table>
             </div>
           )}
+          </div>
         </Card>
       )}
-
-      {/* Edit Modal */}
       {editingLog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="max-w-md w-full">
