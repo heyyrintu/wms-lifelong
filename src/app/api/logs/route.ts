@@ -60,6 +60,20 @@ export async function GET(request: Request) {
       prisma.movementLog.count({ where }),
     ]);
 
+    // If idsOnly is requested, return just the IDs for bulk selection
+    const idsOnly = searchParams.get("idsOnly") === "true";
+    if (idsOnly) {
+      const allIds = await prisma.movementLog.findMany({
+        where,
+        select: { id: true },
+        orderBy: { createdAt: "desc" },
+      });
+      return NextResponse.json({
+        ids: allIds.map(log => log.id),
+        total,
+      });
+    }
+
     const records: MovementRecord[] = logs.map((log) => ({
       id: log.id,
       action: log.action,

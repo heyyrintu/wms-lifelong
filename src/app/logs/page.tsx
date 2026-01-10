@@ -74,6 +74,7 @@ export default function LogsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSelectingAll, setIsSelectingAll] = useState(false);
   const limit = 20;
 
   const queryParams = useMemo(() => {
@@ -223,21 +224,39 @@ export default function LogsPage() {
     }
   };
 
-  const handleSelectAll = () => {
+  const handleSelectAll = async () => {
     if (!data) return;
     
-    const currentPageIds = data.data.map(log => log.id);
-    const allCurrentPageSelected = currentPageIds.every(id => selectedIds.has(id));
-    
-    const newSelected = new Set(selectedIds);
-    if (allCurrentPageSelected) {
-      // Deselect all current page items
-      currentPageIds.forEach(id => newSelected.delete(id));
-    } else {
-      // Select all current page items (add to existing selections)
-      currentPageIds.forEach(id => newSelected.add(id));
+    // If all records are already selected, deselect all
+    if (selectedIds.size === data.pagination.total) {
+      setSelectedIds(new Set());
+      return;
     }
-    setSelectedIds(newSelected);
+    
+    // If some or no records selected, select ALL records (not just current page)
+    setIsSelectingAll(true);
+    try {
+      // Build the same query params but request only IDs
+      const params = new URLSearchParams();
+      params.set("idsOnly", "true");
+      if (filters.action) params.set("action", filters.action);
+      if (filters.sku) params.set("sku", filters.sku.toUpperCase());
+      if (filters.location) params.set("location", filters.location.toUpperCase());
+      if (!isAdmin && user) {
+        params.set("user", user.name || user.email);
+      }
+      
+      const res = await fetch(`/api/logs?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch all IDs");
+      
+      const { ids } = await res.json();
+      setSelectedIds(new Set(ids));
+    } catch (error) {
+      console.error("Select all error:", error);
+      alert("Failed to select all records");
+    } finally {
+      setIsSelectingAll(false);
+    }
   };
 
   const handleClearAllSelections = () => {
@@ -522,19 +541,26 @@ export default function LogsPage() {
                   <tr className="bg-gray-50 text-left text-sm font-semibold text-gray-600">
                     {isAdmin && (
                       <th className="px-4 py-3 w-12">
-                        <input
-                          type="checkbox"
-                          checked={data.data.length > 0 && data.data.every(log => selectedIds.has(log.id))}
-                          ref={(el) => {
-                            if (el) {
-                              const currentPageIds = data.data.map(log => log.id);
-                              const selectedOnPage = currentPageIds.filter(id => selectedIds.has(id)).length;
-                              el.indeterminate = selectedOnPage > 0 && selectedOnPage < currentPageIds.length;
-                            }
-                          }}
-                          onChange={handleSelectAll}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
+                        <div className="flex items-center">
+                          {isSelectingAll ? (
+                            <div className="w-4 h-4 rounded border border-gray-300 flex items-center justify-center">
+                              <div className="w-3 h-3 rounded-sm bg-blue-600 animate-pulse"></div>
+                            </div>
+                          ) : (
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.size > 0 && selectedIds.size === data.pagination.total}
+                              ref={(el) => {
+                                if (el) {
+                                  el.indeterminate = selectedIds.size > 0 && selectedIds.size < data.pagination.total;
+                                }
+                              }}
+                              onChange={handleSelectAll}
+                              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              title={selectedIds.size === data.pagination.total ? "Deselect all" : `Select all ${data.pagination.total} records`}
+                            />
+                          )}
+                        </div>
                       </th>
                     )}
                     <th className="px-4 py-3">Timestamp</th>
