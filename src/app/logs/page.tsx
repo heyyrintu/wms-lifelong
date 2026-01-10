@@ -41,6 +41,13 @@ interface LogsResponse {
   };
 }
 
+interface StatsResponse {
+  totalLocations: number;
+  totalSKUs: number;
+  totalEANs: number;
+  totalQuantity: number;
+}
+
 const actionIcons = {
   PUTAWAY: Package,
   MOVE: ArrowRightLeft,
@@ -90,6 +97,25 @@ export default function LogsPage() {
       if (!res.ok) throw new Error("Failed to fetch logs");
       return res.json();
     },
+  });
+
+  // Fetch stats for admin users
+  const statsQueryParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (filters.action) params.set("action", filters.action);
+    if (filters.sku) params.set("sku", filters.sku.toUpperCase());
+    if (filters.location) params.set("location", filters.location.toUpperCase());
+    return params.toString();
+  }, [filters]);
+
+  const { data: stats } = useQuery<StatsResponse>({
+    queryKey: ["movement-logs-stats", statsQueryParams],
+    queryFn: async () => {
+      const res = await fetch(`/api/logs/stats?${statsQueryParams}`);
+      if (!res.ok) throw new Error("Failed to fetch stats");
+      return res.json();
+    },
+    enabled: isAdmin, // Only fetch for admin users
   });
 
   const handleFilterChange = (key: keyof typeof filters, value: string) => {
@@ -215,33 +241,59 @@ export default function LogsPage() {
     setSelectedIds(newSelected);
   };
 
-  const handleDownloadExcel = () => {
-    if (!data || data.data.length === 0) return;
+  const handleDownloadExcel = async () => {
+    if (!data) return;
 
-    // Prepare data for Excel export
-    const excelData = data.data.map((log) => ({
-      "Timestamp": formatDate(log.createdAt),
-      "Item Code": log.itemCode || "-",
-      "Item Name": log.skuName || "-",
-      "EAN CODE": log.skuCode,
-      "Location": log.toLocationCode || log.fromLocationCode || "-",
-      "Quantity": log.qty,
-      "User": log.user,
-      "Handler": log.handlerName || "-",
-      "Action": log.action === "PUTAWAY" ? "CYCLE COUNT" : log.action,
-    }));
+    try {
+      // Fetch all records for export (not just current page)
+      const allParams = new URLSearchParams();
+      allParams.set("limit", "10000"); // Large limit to get all records
+      allParams.set("offset", "0");
+      if (filters.action) allParams.set("action", filters.action);
+      if (filters.sku) allParams.set("sku", filters.sku.toUpperCase());
+      if (filters.location) allParams.set("location", filters.location.toUpperCase());
+      // Non-admin users can only see their own entries
+      if (!isAdmin && user) {
+        allParams.set("user", user.name || user.email);
+      }
 
-    // Create worksheet and workbook
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Records");
+      const res = await fetch(`/api/logs?${allParams.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch all logs");
+      const allData: LogsResponse = await res.json();
 
-    // Generate filename with current date
-    const date = new Date().toISOString().split("T")[0];
-    const filename = `records-${date}.xlsx`;
+      if (allData.data.length === 0) {
+        alert("No records to download");
+        return;
+      }
 
-    // Download file
-    XLSX.writeFile(workbook, filename);
+      // Prepare data for Excel export
+      const excelData = allData.data.map((log) => ({
+        "Timestamp": formatDate(log.createdAt),
+        "Item Code": log.itemCode || "-",
+        "Item Name": log.skuName || "-",
+        "EAN CODE": log.skuCode,
+        "Location": log.toLocationCode || log.fromLocationCode || "-",
+        "Quantity": log.qty,
+        "User": log.user,
+        "Handler": log.handlerName || "-",
+        "Action": log.action === "PUTAWAY" ? "CYCLE COUNT" : log.action,
+      }));
+
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Records");
+
+      // Generate filename with current date
+      const date = new Date().toISOString().split("T")[0];
+      const filename = `records-${date}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(workbook, filename);
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download Excel file");
+    }
   };
 
   return (
@@ -250,6 +302,59 @@ export default function LogsPage() {
       description={isAdmin ? "View all inventory movements (Admin)" : `Showing your entries only`}
       maxWidth="xl"
     >
+      {/* Admin Stats Cards */}
+      {isAdmin && stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600 mb-1">Total Locations</p>
+                <p className="text-3xl font-bold text-blue-900">{stats.totalLocations}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-600 mb-1">Total SKU</p>
+                <p className="text-3xl font-bold text-green-900">{stats.totalSKUs}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-600 mb-1">Total EAN</p>
+                <p className="text-3xl font-bold text-purple-900">{stats.totalEANs}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-600 mb-1">Total Count</p>
+                <p className="text-3xl font-bold text-orange-900">{stats.totalQuantity.toLocaleString()}</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
+                <ArrowRightLeft className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Filters */}
       <Card className="mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
