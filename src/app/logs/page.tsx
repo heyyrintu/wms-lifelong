@@ -226,11 +226,22 @@ export default function LogsPage() {
   const handleSelectAll = () => {
     if (!data) return;
     
-    if (selectedIds.size === data.data.length) {
-      setSelectedIds(new Set());
+    const currentPageIds = data.data.map(log => log.id);
+    const allCurrentPageSelected = currentPageIds.every(id => selectedIds.has(id));
+    
+    const newSelected = new Set(selectedIds);
+    if (allCurrentPageSelected) {
+      // Deselect all current page items
+      currentPageIds.forEach(id => newSelected.delete(id));
     } else {
-      setSelectedIds(new Set(data.data.map(log => log.id)));
+      // Select all current page items (add to existing selections)
+      currentPageIds.forEach(id => newSelected.add(id));
     }
+    setSelectedIds(newSelected);
+  };
+
+  const handleClearAllSelections = () => {
+    setSelectedIds(new Set());
   };
 
   const handleSelectOne = (id: string) => {
@@ -446,16 +457,30 @@ export default function LogsPage() {
                   {data.pagination.total} records found
                 </span>
                 {isAdmin && selectedIds.size > 0 && (
-                  <Button
-                    onClick={handleBulkDelete}
-                    disabled={isDeleting}
-                    variant="ghost"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    size="sm"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete {selectedIds.size} selected
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="info" className="px-2 py-1">
+                      {selectedIds.size} selected
+                    </Badge>
+                    <Button
+                      onClick={handleBulkDelete}
+                      disabled={isDeleting}
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      size="sm"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                    <Button
+                      onClick={handleClearAllSelections}
+                      variant="ghost"
+                      className="text-gray-600 hover:text-gray-700 hover:bg-gray-100"
+                      size="sm"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Clear
+                    </Button>
+                  </div>
                 )}
               </div>
               {totalPages > 1 && (
@@ -499,7 +524,14 @@ export default function LogsPage() {
                       <th className="px-4 py-3 w-12">
                         <input
                           type="checkbox"
-                          checked={data.data.length > 0 && selectedIds.size === data.data.length}
+                          checked={data.data.length > 0 && data.data.every(log => selectedIds.has(log.id))}
+                          ref={(el) => {
+                            if (el) {
+                              const currentPageIds = data.data.map(log => log.id);
+                              const selectedOnPage = currentPageIds.filter(id => selectedIds.has(id)).length;
+                              el.indeterminate = selectedOnPage > 0 && selectedOnPage < currentPageIds.length;
+                            }
+                          }}
                           onChange={handleSelectAll}
                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
