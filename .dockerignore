@@ -54,8 +54,8 @@ docs
 .github
 .gitlab-ci.yml
 
-# Prisma
-
+# Prisma - Keep prisma folder for migrations and schema
+# Don't ignore prisma directory - it's needed for deployment
 
 # TypeScript
 *.tsbuildinfo
