@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Pass NEXT_PUBLIC_ variables at build time
+        NEXT_PUBLIC_APPWRITE_ENDPOINT: ${NEXT_PUBLIC_APPWRITE_ENDPOINT}
+        NEXT_PUBLIC_APPWRITE_PROJECT_ID: ${NEXT_PUBLIC_APPWRITE_PROJECT_ID}
+        NEXT_PUBLIC_APPWRITE_PROJECT_NAME: ${NEXT_PUBLIC_APPWRITE_PROJECT_NAME}
+        NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID: ${NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME}
+        NEXT_PUBLIC_AUTO_CREATE_SKU: ${NEXT_PUBLIC_AUTO_CREATE_SKU}
+        NEXT_PUBLIC_AUTO_CREATE_LOCATION: ${NEXT_PUBLIC_AUTO_CREATE_LOCATION}
+    environment:
+      # Runtime environment variables
+      - DATABASE_URL=${DATABASE_URL}
+      - APPWRITE_API_KEY=${APPWRITE_API_KEY}
+      - DEFAULT_USER=${DEFAULT_USER}
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
