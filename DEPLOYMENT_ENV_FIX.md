@@ -11,10 +11,10 @@ When building your Docker image on Digital Ocean, pass the environment variables
 
 ```bash
 docker build \
-  --build-arg NEXT_PUBLIC_APPWRITE_ENDPOINT="https://fra.cloud.appwrite.io/v1" \
-  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_ID="695f46420013c5e5e580" \
-  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_NAME="cyclecountFarukhNagar" \
-  --build-arg NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID="695f46de00155811c3c3" \
+  --build-arg NEXT_PUBLIC_APPWRITE_ENDPOINT="YOUR_APPWRITE_ENDPOINT" \
+  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_ID="YOUR_PROJECT_ID" \
+  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_NAME="YOUR_PROJECT_NAME" \
+  --build-arg NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID="YOUR_ADMIN_TEAM_ID" \
   --build-arg NEXT_PUBLIC_APP_NAME="Warehouse Mapping" \
   --build-arg NEXT_PUBLIC_AUTO_CREATE_SKU="true" \
   --build-arg NEXT_PUBLIC_AUTO_CREATE_LOCATION="true" \
@@ -36,17 +36,17 @@ If using Digital Ocean App Platform:
 1. Go to your app settings
 2. Navigate to "Components" → Your component → "Environment Variables"
 3. Add these variables with "Build Time" checkbox enabled:
-   - `NEXT_PUBLIC_APPWRITE_ENDPOINT` = `https://fra.cloud.appwrite.io/v1`
-   - `NEXT_PUBLIC_APPWRITE_PROJECT_ID` = `695f46420013c5e5e580`
-   - `NEXT_PUBLIC_APPWRITE_PROJECT_NAME` = `cyclecountFarukhNagar`
-   - `NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID` = `695f46de00155811c3c3`
+   - `NEXT_PUBLIC_APPWRITE_ENDPOINT` = (Your Appwrite endpoint from .env)
+   - `NEXT_PUBLIC_APPWRITE_PROJECT_ID` = (Your project ID from .env)
+   - `NEXT_PUBLIC_APPWRITE_PROJECT_NAME` = (Your project name from .env)
+   - `NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID` = (Your admin team ID from .env)
    - `NEXT_PUBLIC_APP_NAME` = `Warehouse Mapping`
    - `NEXT_PUBLIC_AUTO_CREATE_SKU` = `true`
    - `NEXT_PUBLIC_AUTO_CREATE_LOCATION` = `true`
 
 4. Also add runtime-only variables (without "Build Time" checkbox):
-   - `DATABASE_URL` = Your database URL
-   - `APPWRITE_API_KEY` = Your API key
+   - `DATABASE_URL` = (Your database URL from .env)
+   - `APPWRITE_API_KEY` = (Your API key from .env)
    - `DEFAULT_USER` = `system`
 
 5. Redeploy your app
@@ -56,26 +56,26 @@ If using Digital Ocean App Platform:
 SSH into your Digital Ocean droplet and run:
 
 ```bash
-# Create a .env file with all variables
+# Create a .env file with all variables (use your actual values)
 cat > .env << 'EOF'
-NEXT_PUBLIC_APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
-NEXT_PUBLIC_APPWRITE_PROJECT_ID=695f46420013c5e5e580
-NEXT_PUBLIC_APPWRITE_PROJECT_NAME=cyclecountFarukhNagar
-NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID=695f46de00155811c3c3
+NEXT_PUBLIC_APPWRITE_ENDPOINT=YOUR_APPWRITE_ENDPOINT
+NEXT_PUBLIC_APPWRITE_PROJECT_ID=YOUR_PROJECT_ID
+NEXT_PUBLIC_APPWRITE_PROJECT_NAME=YOUR_PROJECT_NAME
+NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID=YOUR_ADMIN_TEAM_ID
 NEXT_PUBLIC_APP_NAME=Warehouse Mapping
 NEXT_PUBLIC_AUTO_CREATE_SKU=true
 NEXT_PUBLIC_AUTO_CREATE_LOCATION=true
-DATABASE_URL=your_database_url
-APPWRITE_API_KEY=your_api_key
+DATABASE_URL=YOUR_DATABASE_URL
+APPWRITE_API_KEY=YOUR_API_KEY
 DEFAULT_USER=system
 EOF
 
-# Build with build args
+# Build with build args (replace with your actual values)
 docker build \
-  --build-arg NEXT_PUBLIC_APPWRITE_ENDPOINT="https://fra.cloud.appwrite.io/v1" \
-  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_ID="695f46420013c5e5e580" \
-  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_NAME="cyclecountFarukhNagar" \
-  --build-arg NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID="695f46de00155811c3c3" \
+  --build-arg NEXT_PUBLIC_APPWRITE_ENDPOINT="YOUR_APPWRITE_ENDPOINT" \
+  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_ID="YOUR_PROJECT_ID" \
+  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_NAME="YOUR_PROJECT_NAME" \
+  --build-arg NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID="YOUR_ADMIN_TEAM_ID" \
   --build-arg NEXT_PUBLIC_APP_NAME="Warehouse Mapping" \
   --build-arg NEXT_PUBLIC_AUTO_CREATE_SKU="true" \
   --build-arg NEXT_PUBLIC_AUTO_CREATE_LOCATION="true" \
@@ -104,7 +104,7 @@ After deployment:
 1. Log in to your app
 2. Open browser DevTools → Console
 3. Run: `console.log(process.env.NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID)`
-4. Should see: `"695f46de00155811c3c3"`
+4. Should see your admin team ID (not `undefined`)
 5. If it shows `undefined`, the build args weren't passed correctly
 
 ## Testing Locally
@@ -112,12 +112,12 @@ After deployment:
 To test the Docker build locally:
 
 ```bash
-# Build
+# Build (use your actual values from .env)
 docker build \
-  --build-arg NEXT_PUBLIC_APPWRITE_ENDPOINT="https://fra.cloud.appwrite.io/v1" \
-  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_ID="695f46420013c5e5e580" \
-  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_NAME="cyclecountFarukhNagar" \
-  --build-arg NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID="695f46de00155811c3c3" \
+  --build-arg NEXT_PUBLIC_APPWRITE_ENDPOINT="YOUR_APPWRITE_ENDPOINT" \
+  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_ID="YOUR_PROJECT_ID" \
+  --build-arg NEXT_PUBLIC_APPWRITE_PROJECT_NAME="YOUR_PROJECT_NAME" \
+  --build-arg NEXT_PUBLIC_APPWRITE_ADMIN_TEAM_ID="YOUR_ADMIN_TEAM_ID" \
   --build-arg NEXT_PUBLIC_APP_NAME="Warehouse Mapping" \
   --build-arg NEXT_PUBLIC_AUTO_CREATE_SKU="true" \
   --build-arg NEXT_PUBLIC_AUTO_CREATE_LOCATION="true" \
