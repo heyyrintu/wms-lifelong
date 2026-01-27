@@ -12,9 +12,15 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const { code } = await params;
     const searchCode = code.toUpperCase();
 
-    // Search by EAN code first, then by itemCode
-    let sku = await prisma.sku.findUnique({
-      where: { code: searchCode },
+    // Search by EAN/code, itemCode, or barcode (case-insensitive where applicable)
+    const sku = await prisma.sku.findFirst({
+      where: {
+        OR: [
+          { code: searchCode }, // primary key (EAN/code)
+          { itemCode: { equals: searchCode, mode: "insensitive" } },
+          { barcode: { equals: searchCode, mode: "insensitive" } },
+        ],
+      },
       include: {
         inventory: {
           where: { qty: { gt: 0 } },
@@ -23,20 +29,6 @@ export async function GET(_request: Request, { params }: RouteParams) {
         },
       },
     });
-
-    // If not found by EAN code, try searching by itemCode
-    if (!sku) {
-      sku = await prisma.sku.findFirst({
-        where: { itemCode: { equals: searchCode, mode: "insensitive" } },
-        include: {
-          inventory: {
-            where: { qty: { gt: 0 } },
-            include: { location: true },
-            orderBy: { location: { code: "asc" } },
-          },
-        },
-      });
-    }
 
     if (!sku) {
       return NextResponse.json(
