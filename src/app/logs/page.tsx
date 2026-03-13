@@ -279,7 +279,7 @@ export default function LogsPage() {
     try {
       // Fetch all records for export (not just current page)
       const allParams = new URLSearchParams();
-      allParams.set("limit", "10000"); // Large limit to get all records
+      allParams.set("limit", "1000000"); // Large limit to get all records
       allParams.set("offset", "0");
       if (filters.action) allParams.set("action", filters.action);
       if (filters.sku) allParams.set("sku", filters.sku.toUpperCase());
